@@ -1,5 +1,5 @@
 import sys
-from . import main
+from .cli import main
 
 return_code = 1  # Catchall for general errors
 try:

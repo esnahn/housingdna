@@ -1,6 +1,1 @@
-def main():
-    pass
-
-
-if __name__ == "__main__":
-    main()
+from .revitapi import get_model
