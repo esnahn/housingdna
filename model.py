@@ -1,6 +1,56 @@
+import enum
+from itertools import combinations
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Sequence, Set
 import networkx as nx
+
+
+class Direction(enum.Enum):
+    """Compass directions Enum in 8 ways.
+
+    >>> dir_list = [Direction.SOUTH, Direction.SOUTHEAST]
+    >>> Direction.SOUTH in dir_list
+    True
+    >>> Direction.NORTH in dir_list
+    False
+
+    >>> Direction.NORTH < Direction.NORTHEAST  # not int
+    Traceback (most recent call last):
+        ...
+    TypeError: '<' not supported between instances of 'Direction' and 'Direction'
+    """
+
+    NORTH = 1
+    NORTHEAST = 2
+    EAST = 3
+    SOUTHEAST = 4
+    SOUTH = 5
+    SOUTHWEST = 6
+    WEST = 7
+    NORTHWEST = 8
+
+
+def multiple_sides(directions: Set) -> bool:
+    """Check if there are directions that point different sides.
+
+    fuzziness makes two neighboring directions equal to each other.
+    >>> dir_set = {Direction.NORTH, Direction.NORTHEAST}
+    >>> multiple_sides(dir_set)
+    False
+
+    Difference beyond fuzziness returns True.
+    >>> dir_set.add(Direction.EAST)
+    >>> print("Multiple sides" if multiple_sides(dir_set) else "Nope")
+    Multiple sides
+    """
+
+    num_directions = 8
+    fuzziness = 1
+    return any(
+        abs(a.value - b.value) > fuzziness
+        and abs(a.value - b.value) < num_directions - fuzziness
+        for a, b in combinations(directions, 2)
+    )
 
 
 @dataclass(frozen=True)
@@ -69,3 +119,8 @@ if __name__ == "__main__":
         print(e)  # no change!
     n.graph.add_edge(a, x)  # graph var is mutable
     print(n.graph)
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
