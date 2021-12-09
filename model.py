@@ -55,6 +55,22 @@ def multiple_sides(directions: Set) -> bool:
 
 @dataclass(frozen=True)
 class Length:
+    """Length in milimeters.
+
+    >>> Length(1000)
+    Length(mm=1000)
+
+    Rounds up the value to 2 decimal places.
+    >>> Length(100.12345)
+    Length(mm=100.12)
+
+    Can convert from feet, which is the internal unit of length in Revit.
+    One foot is defined as 0.3048 meters exactly, So the value in the next
+    example was not rounded up.
+    >>> Length.from_ft(6)
+    Length(mm=1828.8)
+    """
+
     mm: float
 
     def __post_init__(self):
@@ -68,14 +84,68 @@ class Length:
 
 @dataclass(frozen=True)
 class Room:
+    """Room.
+
+    Details are subject to change.
+
+    >>> living_room = Room(element_id=0, name='거실', height=Length.from_ft(10))
+    >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
+
+    Room can be a key in dicts.
+    >>> {living_room: living_room.name}
+    {Room(element_id=0, name='거실', height=Length(mm=3048.0)): '거실'}
+
+    Tuple of two Rooms will represent a connection between them.
+    >>> connection = (living_room, kitchen)
+
+    ElementIds of Rooms in the same Revit model are unique.
+    But, This dataclass does not check nor prevent id collision.
+    Therefore, you can create "same" rooms with different attributes.
+    >>> bedroom = Room(element_id=0, name='침실', height=Length.from_ft(8))
+
+    They are equal, as in having same elementId.
+    >>> living_room == bedroom
+    True
+
+    They will be treated as same and deduplicated in sets.
+    >>> room_set = {living_room}
+    >>> room_set.add(bedroom)
+    >>> print(room_set)
+    {Room(element_id=0, name='거실', height=Length(mm=3048.0))}
+
+    Even though they are not the same object.
+    >>> living_room is bedroom
+    False
+    >>> id(living_room) == id(bedroom)
+    False
+    """
+
     element_id: int
     name: str = field(compare=False)
     height: Length = field(compare=False)
 
 
-@dataclass(frozen=True)
+@dataclass
 class RoomNetwork:
-    graph: nx.Graph = field(repr=False)  # mutable obscure object; no show on repr
+    """Wraps networkx Graph of Rooms.
+
+    >>> living_room = Room(element_id=0, name='거실', height=Length.from_ft(10))
+    >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
+    >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
+
+    >>> g = nx.Graph([(living_room, kitchen), (living_room, bedroom)])
+    >>> rn = RoomNetwork(g)
+    >>> rn
+    Room network with 3 rooms and 2 connections
+    """
+
+    graph: nx.Graph
+
+    def __repr__(self):
+        return (
+            f"Room network with {self.graph.number_of_nodes()} rooms "
+            f"and {self.graph.number_of_edges()} connections"
+        )
 
     @classmethod
     def from_edges(cls, edge_list):
@@ -84,41 +154,30 @@ class RoomNetwork:
         return cls(G)
 
 
-@dataclass(frozen=True)
+@dataclass
 class House:
+    """Model of a house for the housing DNA analysis.
+
+    >>> living_room = Room(element_id=0, name='거실', height=Length.from_ft(10))
+    >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
+    >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
+    >>> rooms = [living_room, kitchen, bedroom]
+
+    >>> conns = [(living_room, kitchen), (living_room, bedroom)]
+    >>> rn = RoomNetwork(graph=nx.Graph(conns))
+
+    >>> house = House(rooms=rooms, room_network=rn)
+    >>> house  #doctest: +ELLIPSIS
+    House(rooms=[Room(...),...], room_network=Room network with ...)
+    """
+
     rooms: Sequence[Room]
     room_network: RoomNetwork
 
+    # @classmethod
+    # def from_json(cls, path):
+    #     return cls()
 
-if __name__ == "__main__":
-    print(Length(10))
-    print(Length.from_ft(10))
-
-    print(Room(0, "거실", Length.from_ft(30)))
-
-    a = Room(0, "거실", Length.from_ft(30))
-    b = Room(0, "침실", Length.from_ft(25))
-    assert a == b  # compare id only
-    assert id(a) != id(b)  # different objects
-    {a: b}  # can be key
-
-    c = (a, a)
-    d = (b, b)
-    assert c == d  # same (eq) room, same connection
-    assert len(set([c, d])) == 1  # same connection, so only 1 connection remains
-
-    g = nx.Graph([c])
-    n = RoomNetwork(g)
-    print(n.graph)
-
-    x = Room(-1, "현관", Length.from_ft(15))
-    try:
-        # even pylance finds a problem
-        n.graph = nx.Graph([d])  # type: ignore
-    except Exception as e:
-        print(e)  # no change!
-    n.graph.add_edge(a, x)  # graph var is mutable
-    print(n.graph)
 
 if __name__ == "__main__":
     import doctest
