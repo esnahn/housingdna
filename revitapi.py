@@ -33,6 +33,15 @@ def get_revit_doc(uiapp):
     return doc
 
 
+def get_project_path(obj):
+    if hasattr(obj, "PathName"):
+        return obj.PathName
+    elif hasattr(obj, "ActiveUIDocument"):
+        return get_revit_doc(obj).PathName
+    else:
+        return None
+
+
 def get_all_by_category(doc, category):
     collector = (
         DB.FilteredElementCollector(doc)
