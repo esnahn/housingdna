@@ -158,14 +158,14 @@ class House:
         if not filepath.parent.exists():
             filepath.parent.mkdir(parents=True)
 
-        with open(filepath, "w", encoding="utf-8") as file:
+        with open(str(filepath), "w", encoding="utf-8") as file:
             json.dump(
                 self, file, ensure_ascii=False, indent=4, cls=DataclassJSONEncoder
             )
 
     @classmethod
     def from_json(cls, path):
-        with open(path, encoding="utf-8") as file:
+        with open(str(path), encoding="utf-8") as file:
             obj = json.load(file, object_hook=to_nested_dataclass)
         return obj if isinstance(obj, cls) else None
 
