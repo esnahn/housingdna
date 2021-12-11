@@ -123,11 +123,9 @@ def get_model(uiapp):
 
     _id_sep_lines = sorted(map(get_id, clr_sep_lines))
     _id_room_connections = get_room_connections(clr_rooms, clr_doors, _id_sep_lines)
-    room_network = RoomNetwork.from_edges(
-        (rooms_dict[a], rooms_dict[b]) for a, b in _id_room_connections
-    )
+    room_conns = tuple((rooms_dict[a], rooms_dict[b]) for a, b in _id_room_connections)
 
     return House(
-        list(rooms_dict.values()),
-        room_network,
+        rooms=tuple(rooms_dict.values()),
+        room_connections=room_conns,
     )

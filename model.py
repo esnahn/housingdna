@@ -1,7 +1,10 @@
 import enum
+import json
+from pathlib import Path, PurePath
 from itertools import combinations
+import dataclasses
 from dataclasses import dataclass, field
-from typing import Sequence, Set
+from typing import Dict, Iterable, List, Mapping, Sequence, Set, Tuple
 import networkx as nx
 
 
@@ -95,7 +98,7 @@ class Room:
     >>> {living_room: living_room.name}
     {Room(element_id=0, name='거실', height=Length(mm=3048.0)): '거실'}
 
-    Tuple of two Rooms will represent a connection between them.
+    A tuple of two Rooms will represent a connection between them.
     >>> connection = (living_room, kitchen)
 
     ElementIds of Rooms in the same Revit model are unique.
@@ -125,58 +128,133 @@ class Room:
     height: Length = field(compare=False)
 
 
-@dataclass
-class RoomNetwork:
-    """Wraps networkx Graph of Rooms.
-
-    >>> living_room = Room(element_id=0, name='거실', height=Length.from_ft(10))
-    >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
-    >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
-
-    >>> g = nx.Graph([(living_room, kitchen), (living_room, bedroom)])
-    >>> rn = RoomNetwork(g)
-    >>> rn
-    Room network with 3 rooms and 2 connections
-    """
-
-    graph: nx.Graph
-
-    def __repr__(self):
-        return (
-            f"Room network with {self.graph.number_of_nodes()} rooms "
-            f"and {self.graph.number_of_edges()} connections"
-        )
-
-    @classmethod
-    def from_edges(cls, edge_list):
-        G = nx.Graph()
-        G.add_edges_from(edge_list)
-        return cls(G)
-
-
-@dataclass
+@dataclass(frozen=True)
 class House:
     """Model of a house for the housing DNA analysis.
 
     >>> living_room = Room(element_id=0, name='거실', height=Length.from_ft(10))
     >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
     >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
-    >>> rooms = [living_room, kitchen, bedroom]
 
-    >>> conns = [(living_room, kitchen), (living_room, bedroom)]
-    >>> rn = RoomNetwork(graph=nx.Graph(conns))
+    >>> rooms = (living_room, kitchen, bedroom)
+    >>> conns = ((living_room, kitchen), (living_room, bedroom))
 
-    >>> house = House(rooms=rooms, room_network=rn)
-    >>> house  #doctest: +ELLIPSIS
-    House(rooms=[Room(...),...], room_network=Room network with ...)
+    >>> house = House(rooms=rooms, room_connections=conns)
+    >>> house  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    House(rooms=(Room(element_id=0, ...),
+            room_connections=((Room(...), Room(...)), ...))
+
+    >>> house.to_json("models/test.json")
+    >>> d = House.from_json("models/test.json")
+    >>> house == d
+    True
     """
 
-    rooms: Sequence[Room]
-    room_network: RoomNetwork
+    rooms: Tuple[Room, ...]
+    room_connections: Tuple[Tuple[Room, Room], ...]
 
-    # @classmethod
-    # def from_json(cls, path):
-    #     return cls()
+    def to_json(self, path):
+        filepath = Path(path)
+        if not filepath.parent.exists():
+            filepath.parent.mkdir(parents=True)
+
+        with open(filepath, "w", encoding="utf-8") as file:
+            json.dump(
+                self, file, ensure_ascii=False, indent=4, cls=DataclassJSONEncoder
+            )
+
+    @classmethod
+    def from_json(cls, path):
+        with open(path, encoding="utf-8") as file:
+            obj = json.load(file, object_hook=to_nested_dataclass)
+        return obj if isinstance(obj, cls) else None
+
+
+### JSON
+
+
+def is_dataclass_instance(obj):
+    """Returns True if a class is an instance of a dataclass (and not a
+    dataclass itself)
+    """
+    return dataclasses.is_dataclass(obj) and not isinstance(obj, type)
+
+
+def as_nested_dict(obj):
+    """Converts dataclasses to dicts in a nested data object.
+
+    Accept an object consisting of dataclasses, lists, tuples, and dicts, and
+    their elements.
+
+    Dataclassess will be converted to dicts. The key "__dataclass__" that has
+    a value of `obj.__class__.__name__` will be added whenever a dataclass is
+    converted.
+
+    Lists, tuples, and dicts will be iterated and searched for dataclasses inside.
+    Other types of objects will be returned as is.
+    """
+    if is_dataclass_instance(obj):
+        result = []
+        for f in dataclasses.fields(obj):
+            value = as_nested_dict(getattr(obj, f.name))  # recursive
+            result.append((f.name, value))
+
+        result.append(("__dataclass__", obj.__class__.__name__))
+        return dict(result)
+
+    elif isinstance(obj, Iterable):
+        iter = (as_nested_dict(e) for e in obj)
+
+        if isinstance(obj, list):
+            return list(iter)
+        if isinstance(obj, tuple):
+            return tuple(iter)
+        if isinstance(obj, dict):
+            return {key: as_nested_dict(obj[key]) for key in obj}
+
+    return obj
+
+
+class DataclassJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if is_dataclass_instance(o):
+            return as_nested_dict(o)
+        else:
+            print(type(o))
+        return super().default(o)
+
+
+def to_nested_dataclass(obj):
+    """Converts special dicts back to dataclasses in a nested data object.
+
+    Accept an object consisting of dicts, lists, tuples, and
+    their elements.
+
+    Dicts that are converted from dataclassess have a key named "__dataclass__"
+    which holds the class name. Those dicts will be converted back to dataclass
+    of matching name.
+
+    Lists and tuples (which were saved as JSON arrays) are converted to tuples.
+    """
+
+    if isinstance(obj, dict):
+        if class_ := obj.pop("__dataclass__", None):
+            result = []
+            for key in obj:
+                value = to_nested_dataclass(obj[key])  # recursive
+                result.append((key, value))
+            return globals()[class_](**dict(result))
+
+        else:
+            return {key: to_nested_dataclass(obj[key]) for key in obj}
+
+    elif isinstance(obj, Iterable):
+        iter = (to_nested_dataclass(e) for e in obj)
+
+        if isinstance(obj, list) or isinstance(obj, tuple):
+            return tuple(iter)
+
+    return obj
 
 
 if __name__ == "__main__":
