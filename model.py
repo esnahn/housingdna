@@ -5,7 +5,6 @@ from itertools import combinations
 import dataclasses
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Mapping, Sequence, Set, Tuple
-import networkx as nx
 
 
 class Direction(enum.Enum):
