@@ -128,6 +128,7 @@ def get_model(uiapp):
             height=get_unbounded_height(room),
         )
         for room in clr_rooms
+        if room.Area and room.Location
     }
 
     _id_sep_lines = sorted(map(get_id, clr_sep_lines))
