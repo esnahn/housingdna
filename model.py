@@ -146,8 +146,8 @@ class House:
     House(rooms=(Room(element_id=0, name='거실', height=Length(mm=3048.0)), ...
             room_connections=((0, 1), (0, 2)))
 
-    >>> house.to_json("models/test.json")
-    >>> d = House.from_json("models/test.json")
+    >>> house.to_json("test.json")
+    >>> d = House.from_json("test.json")
     >>> house == d
     True
     """

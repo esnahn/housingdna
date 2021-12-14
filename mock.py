@@ -10,7 +10,7 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = package_path.name
     sys.path.append(str(package_path.parent))
 
-from .model import House, Room, Length
+from .model import House
 
 
 def get_model(path):
@@ -18,6 +18,10 @@ def get_model(path):
 
 
 if __name__ == "__main__":
+    from .model import Room, Length
+
+    from pathlib import PurePath
+
     # build mock.json
     rooms = (
         Room(element_id=373987, name="거실 1", height=Length(mm=4000.0)),
@@ -32,5 +36,5 @@ if __name__ == "__main__":
         rooms=rooms,
         room_connections=conns,
     )
-    house.to_json("models/mock.json")
-    print(House.from_json("models/mock.json"))
+    house.to_json(PurePath(__file__).parent / "models/mock.json")
+    print(House.from_json(PurePath(__file__).parent / "models/mock.json"))
