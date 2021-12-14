@@ -137,12 +137,15 @@ class House:
     >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
 
     >>> rooms = (living_room, kitchen, bedroom)
-    >>> conns = ((living_room, kitchen), (living_room, bedroom))
+    >>> conns = (
+    ...     (living_room.element_id, kitchen.element_id),
+    ...     (living_room.element_id, bedroom.element_id),
+    ... )
 
     >>> house = House(rooms=rooms, room_connections=conns)
     >>> house  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-    House(rooms=(Room(element_id=0, ...),
-            room_connections=((Room(...), Room(...)), ...))
+    House(rooms=(Room(element_id=0, name='거실', height=Length(mm=3048.0)), ...
+            room_connections=((0, 1), (0, 2)))
 
     >>> house.to_json("models/test.json")
     >>> d = House.from_json("models/test.json")
@@ -151,7 +154,7 @@ class House:
     """
 
     rooms: Tuple[Room, ...]
-    room_connections: Tuple[Tuple[Room, Room], ...]
+    room_connections: Tuple[Tuple[int, int], ...]
 
     def to_json(self, path):
         filepath = Path(path)

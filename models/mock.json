@@ -30,44 +30,12 @@
     ],
     "room_connections": [
         [
-            {
-                "element_id": 373990,
-                "name": "침실 2",
-                "height": {
-                    "mm": 4000.0,
-                    "__dataclass__": "Length"
-                },
-                "__dataclass__": "Room"
-            },
-            {
-                "element_id": 376804,
-                "name": "드레스룸 6",
-                "height": {
-                    "mm": 7600.0,
-                    "__dataclass__": "Length"
-                },
-                "__dataclass__": "Room"
-            }
+            373990,
+            376804
         ],
         [
-            {
-                "element_id": 373990,
-                "name": "침실 2",
-                "height": {
-                    "mm": 4000.0,
-                    "__dataclass__": "Length"
-                },
-                "__dataclass__": "Room"
-            },
-            {
-                "element_id": 373987,
-                "name": "거실 1",
-                "height": {
-                    "mm": 4000.0,
-                    "__dataclass__": "Length"
-                },
-                "__dataclass__": "Room"
-            }
+            373990,
+            373987
         ]
     ],
     "__dataclass__": "House"

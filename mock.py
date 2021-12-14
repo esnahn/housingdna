@@ -25,14 +25,8 @@ if __name__ == "__main__":
         Room(element_id=376804, name="드레스룸 6", height=Length(mm=7600.0)),
     )
     conns = (
-        (
-            Room(element_id=373990, name="침실 2", height=Length(mm=4000.0)),
-            Room(element_id=376804, name="드레스룸 6", height=Length(mm=7600.0)),
-        ),
-        (
-            Room(element_id=373990, name="침실 2", height=Length(mm=4000.0)),
-            Room(element_id=373987, name="거실 1", height=Length(mm=4000.0)),
-        ),
+        (373990, 376804),
+        (373990, 373987),
     )
     house = House(
         rooms=rooms,
