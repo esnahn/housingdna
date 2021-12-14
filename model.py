@@ -1,4 +1,4 @@
-import enum
+from enum import Enum
 import json
 from pathlib import Path, PurePath
 from itertools import combinations
@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Mapping, Sequence, Set, Tuple
 
 
-class Direction(enum.Enum):
+class Direction(Enum):
     """Compass directions Enum in 8 ways.
 
     >>> dir_list = [Direction.SOUTH, Direction.SOUTHEAST]
@@ -194,6 +194,9 @@ def as_nested_dict(obj):
 
     Lists, tuples, and dicts will be iterated and searched for dataclasses inside.
     Other types of objects will be returned as is.
+
+    Enums will be converted to dicts, with the key "__enum__" that has a value
+    of `str(obj)`.
     """
     if is_dataclass_instance(obj):
         result = []
@@ -214,6 +217,9 @@ def as_nested_dict(obj):
         if isinstance(obj, dict):
             return {key: as_nested_dict(obj[key]) for key in obj}
 
+    elif isinstance(obj, Enum):
+        # https://stackoverflow.com/a/24482806
+        return {"__enum__": str(obj)}
     return obj
 
 
@@ -236,6 +242,10 @@ def to_nested_dataclass(obj):
     which holds the class name. Those dicts will be converted back to dataclass
     of matching name.
 
+    Dicts that are converted from enums have a key named "__enum__" which holds
+    a string representation of an enum. Those dicts will be converted back to
+    enum member of matching class and names.
+
     Lists and tuples (which were saved as JSON arrays) are converted to tuples.
     """
 
@@ -246,7 +256,11 @@ def to_nested_dataclass(obj):
                 value = to_nested_dataclass(obj[key])  # recursive
                 result.append((key, value))
             return globals()[class_](**dict(result))
-
+        elif "__enum__" in obj:
+            # https://stackoverflow.com/a/24482806
+            name, member = obj["__enum__"].split(".")
+            if issubclass(class_ := globals()[name], Enum):
+                return getattr(class_, member)
         else:
             return {key: to_nested_dataclass(obj[key]) for key in obj}
 
