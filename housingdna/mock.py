@@ -10,15 +10,8 @@ if __name__ == "__main__" and __package__ is None:
     __package__ = package_path.name
     sys.path.append(str(package_path.parent))
 
-from .model import House
-
-
-def get_model(path):
-    return House.from_json(path)
-
-
 if __name__ == "__main__":
-    from .model import Room, Length
+    from .model import House, Room, Length
 
     from pathlib import PurePath
 
