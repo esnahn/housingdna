@@ -88,6 +88,9 @@ def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnecti
 
     # get room connections by doors
     for door in clr_doors:
+        # TODO: fromroom toroom 의존하지 않기; 비어있는 경우가 있음
+        # Revit From/To Room field blank
+        # https://knowledge.autodesk.com/support/revit/troubleshooting/caas/sfdcarticles/sfdcarticles/Revit-From-To-Room-field-blank-in-Door-schedule.html
         if door.FromRoom and door.ToRoom:
             if door.FromRoom != door.ToRoom:
                 room_connections.add(
