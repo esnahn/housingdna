@@ -1,10 +1,29 @@
-from enum import Enum
+from enum import Enum, auto, unique
 import json
 from pathlib import Path, PurePath
 from itertools import combinations
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Mapping, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Literal, Mapping, Sequence, Set, Tuple
+
+
+@unique
+class RevitObject(Enum):
+    """Object type enum of/based on Revit categories."""
+
+    DOOR = auto()
+    ROOM_SEPARATION_LINE = auto()
+    WINDOW = auto()
+    CURTAIN_WALL = auto()
+    # BASIC_WALL
+
+
+Access = Literal[RevitObject.DOOR, RevitObject.ROOM_SEPARATION_LINE]
+Glazing = Literal[
+    RevitObject.WINDOW,
+    RevitObject.CURTAIN_WALL,
+    RevitObject.ROOM_SEPARATION_LINE,
+]  # is a part of a wall or window, made of glass.
 
 
 class Direction(Enum):
@@ -142,6 +161,40 @@ class Room:
 
 
 @dataclass(frozen=True)
+class Opening:
+    """A transparent boundary of room(s).
+
+    A glazed Window, a curtain wall, or an imaginary line that separates rooms.
+
+    Openings with same elementId will be treated as same and deduplicated in sets.
+    """
+
+    element_id: int
+    type_: Glazing = field(compare=False)
+    outmost: bool = field(compare=False)
+
+
+@dataclass(frozen=True)
+class RoomConnection:
+    """A connection between room A and room B."""
+
+    a_id: int
+    b_id: int
+    type_: Access
+
+
+@dataclass(frozen=True)
+class RoomOpeningRelation:
+    """A relation between a room and an opening.
+
+    The facing indicates the compass direction from a room to an opening."""
+
+    room_id: int
+    window_id: int
+    facing: Direction = field(compare=False)
+
+
+@dataclass(frozen=True)
 class House:
     """Model of a house for the housing DNA analysis.
 
@@ -149,25 +202,62 @@ class House:
     >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
     >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
 
+    >>> bed_window = Opening(10, RevitObject.WINDOW, outmost=True)
+    >>> ldk_line = Opening(11, RevitObject.ROOM_SEPARATION_LINE, outmost=False)
+
     >>> rooms = (living_room, kitchen, bedroom)
+    >>> openings = (bed_window, ldk_line)
+
     >>> conns = (
-    ...     (living_room.element_id, kitchen.element_id),
-    ...     (living_room.element_id, bedroom.element_id),
+    ...     RoomConnection(
+    ...         a_id=living_room.element_id,
+    ...         b_id=kitchen.element_id,
+    ...         type_=RevitObject.ROOM_SEPARATION_LINE,
+    ...     ),
+    ...     RoomConnection(
+    ...         a_id=living_room.element_id,
+    ...         b_id=bedroom.element_id,
+    ...         type_=RevitObject.DOOR,
+    ...     ),
     ... )
 
-    >>> house = House(rooms=rooms, room_connections=conns)
+    >>> rels = (
+    ...     RoomOpeningRelation(
+    ...         bedroom.element_id,
+    ...         bed_window.element_id,
+    ...         Direction.SOUTH,
+    ...     ),
+    ...     RoomOpeningRelation(
+    ...         living_room.element_id,
+    ...         ldk_line.element_id,
+    ...         Direction.EAST,
+    ...     ),
+    ...     RoomOpeningRelation(
+    ...         kitchen.element_id,
+    ...         ldk_line.element_id,
+    ...         Direction.WEST,  # opposite of facing from living room
+    ...     ),
+    ... )
+
+    >>> house = House(
+    ...     rooms=rooms,
+    ...     room_connections=conns,
+    ...     openings=openings,
+    ...     room_opening_relations=conns,
+    ... )
     >>> house  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     House(rooms=(Room(element_id=0, name='거실', height=Length(mm=3048.0)), ...
-            room_connections=((0, 1), (0, 2)))
-
+           RoomConnection(a_id=0, b_id=2, type_=<RevitObject.DOOR: 1>)))
     >>> house.to_json("test.json")
     >>> d = House.from_json("test.json")
     >>> house == d
     True
     """
 
-    rooms: Tuple[Room, ...]
-    room_connections: Tuple[Tuple[int, int], ...]
+    rooms: Tuple[Room, ...] = tuple()
+    room_connections: Tuple[RoomConnection, ...] = tuple()
+    openings: Tuple[Opening, ...] = tuple()
+    room_opening_relations: Tuple[RoomOpeningRelation, ...] = tuple()
 
     def to_json(self, path):
         filepath = Path(path)

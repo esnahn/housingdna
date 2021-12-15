@@ -29,14 +29,42 @@
         }
     ],
     "room_connections": [
-        [
-            373990,
-            376804
-        ],
-        [
-            373990,
-            373987
-        ]
+        {
+            "a_id": 373990,
+            "b_id": 376804,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 373987,
+            "b_id": 373990,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        }
+    ],
+    "openings": [
+        {
+            "element_id": 1,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Opening"
+        }
+    ],
+    "room_opening_relations": [
+        {
+            "room_id": 373990,
+            "window_id": 1,
+            "facing": {
+                "__enum__": "Direction.SOUTH"
+            },
+            "__dataclass__": "RoomOpeningRelation"
+        }
     ],
     "__dataclass__": "House"
 }
