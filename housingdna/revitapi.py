@@ -1,7 +1,7 @@
 from typing import Sequence, Set, Tuple
 import itertools
 
-from .model import *
+from .model import House, Length, RevitObject, Room, RoomConnection
 
 import clr
 
@@ -80,18 +80,21 @@ def get_id(elem):
     return int(id_)
 
 
-def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[Tuple[int, int]]:
+def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnection]:
     opt = DB.SpatialElementBoundaryOptions()
     opt.SpatialElementBoundaryLocation = DB.SpatialElementBoundaryLocation.Center
 
-    id_room_connections = set()
+    room_connections = set()
 
     # get room connections by doors
     for door in clr_doors:
         if door.FromRoom and door.ToRoom:
             if door.FromRoom != door.ToRoom:
-                id_room_connections.add(
-                    tuple(sorted(map(get_id, (door.FromRoom, door.ToRoom))))
+                room_connections.add(
+                    RoomConnection(
+                        *sorted(map(get_id, (door.FromRoom, door.ToRoom))),
+                        type_=RevitObject.DOOR,
+                    )
                 )
 
     # get room connections by room separation lines
@@ -100,17 +103,23 @@ def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[Tuple[int, i
         id_room = get_id(room)
 
         boundaries = itertools.chain.from_iterable(room.GetBoundarySegments(opt))
-        id_boundaries = map(get_id, boundaries)
+        id_boundaries = list(map(get_id, boundaries))
         for id_ in id_boundaries:
             if id_ in id_sep_lines:
                 sep_rooms_dict.setdefault(id_, set()).add(id_room)
 
-    for rooms in sep_rooms_dict.values():
-        if len(rooms) >= 2:
-            for pair in itertools.combinations(rooms, 2):
-                id_room_connections.add(tuple(sorted(pair)))
+    id_rooms_separated: Set[int]
+    for id_rooms_separated in sep_rooms_dict.values():
+        if len(id_rooms_separated) >= 2:
+            for id_pair in itertools.combinations(id_rooms_separated, 2):
+                room_connections.add(
+                    RoomConnection(
+                        *sorted(id_pair),
+                        type_=RevitObject.ROOM_SEPARATION_LINE,
+                    )
+                )
 
-    return id_room_connections
+    return room_connections
 
 
 def get_model(uiapp):
@@ -132,9 +141,9 @@ def get_model(uiapp):
     }
 
     _id_sep_lines = sorted(map(get_id, clr_sep_lines))
-    room_conns = tuple(get_room_connections(clr_rooms, clr_doors, _id_sep_lines))
+    room_conns = get_room_connections(clr_rooms, clr_doors, _id_sep_lines)
 
     return House(
         rooms=tuple(rooms_dict.values()),
-        room_connections=room_conns,
+        room_connections=tuple(room_conns),
     )
