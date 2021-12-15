@@ -31,6 +31,20 @@ class Direction(Enum):
     WEST = 7
     NORTHWEST = 8
 
+    def opposite(self):
+        """Return the opposite direction of itself.
+
+        >>> d = Direction.NORTH
+        >>> d.opposite()
+        <Direction.SOUTH: 5>
+
+        >>> Direction.SOUTH.opposite()
+        <Direction.NORTH: 1>
+        >>> Direction.SOUTHEAST.opposite()
+        <Direction.NORTHWEST: 8>
+        """
+        return Direction((self.value - 1 + 4) % 8 + 1)
+
 
 def multiple_sides(directions: Set) -> bool:
     """Check if there are directions that point different sides.
