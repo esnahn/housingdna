@@ -190,7 +190,7 @@ class RoomOpeningRelation:
     The facing indicates the compass direction from a room to an opening."""
 
     room_id: int
-    window_id: int
+    opening_id: int
     facing: Direction = field(compare=False)
 
 
@@ -243,11 +243,11 @@ class House:
     ...     rooms=rooms,
     ...     room_connections=conns,
     ...     openings=openings,
-    ...     room_opening_relations=conns,
+    ...     room_opening_relations=rels,
     ... )
     >>> house  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     House(rooms=(Room(element_id=0, name='거실', height=Length(mm=3048.0)), ...
-           RoomConnection(a_id=0, b_id=2, type_=<RevitObject.DOOR: 1>)))
+    RoomOpeningRelation(room_id=1, opening_id=11, facing=<Direction.WEST: 7>)))
     >>> house.to_json("test.json")
     >>> d = House.from_json("test.json")
     >>> house == d
