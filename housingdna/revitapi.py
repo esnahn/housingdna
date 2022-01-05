@@ -13,18 +13,8 @@ clr.AddReference("UIFrameworkServices")
 
 from Autodesk.Revit import DB  # type: ignore
 
-# error
-# from dynamo
-# from RevitServices.Persistence import DocumentManager
-# doc = DocumentManager.Instance.CurrentDBDocument
 
-# error
-# https://github.com/eirannejad/pyRevit/blob/master/pyrevitlib/pyrevit/__init__.py
-# from pyrevit import _HostApplication
-#
-# hostapp = _HostApplication()
-# doc = hostapp.doc
-# print(doc)
+### revit interface
 
 
 def get_revit_doc(uiapp):
@@ -51,13 +41,19 @@ def get_all_by_category(doc, category):
     return [elem for elem in collector]
 
 
-def get_unbounded_height(room):
-    height = room.UnboundedHeight
-    # height = room.GetParameter(DB.ParameterTypeId.RoomHeight).AsDouble()
-    return Length.from_ft(height)
+def get_all_by_class(doc, type_):
+    collector = (
+        DB.FilteredElementCollector(doc).OfClass(type_).WhereElementIsNotElementType()
+    )
+    return [elem for elem in collector]
 
 
 def get_name(elem):
+    try:
+        return str(elem.Name)
+    except:
+        pass
+
     # .NET property not accessible in derived classes
     # where only the setter or the getter has been overridden
     # https://github.com/pythonnet/pythonnet/issues/1455
@@ -66,18 +62,97 @@ def get_name(elem):
     # print(elem.GetType().BaseType.BaseType.FullName)
 
     # SpatialElement overrides only the setter, so we use Element's getter.
-    return str(clr.GetClrType(DB.Element).GetProperty("Name").GetValue(elem))
+    try:
+        return str(clr.GetClrType(DB.Element).GetProperty("Name").GetValue(elem))
+    except:
+        pass
+
+    raise Exception(f"get_name could not handle {type(elem)}")
 
 
 def get_id(elem):
+    try:
+        return int(elem.Id.IntegerValue)
+    except:
+        pass
+
     if isinstance(elem, DB.Element):
         id_ = clr.GetClrType(DB.Element).GetProperty("Id").GetValue(elem).IntegerValue
     elif type(elem) == DB.BoundarySegment:
         id_ = elem.ElementId.IntegerValue
     else:
-        print(type(elem))
-        id_ = -1  # return error
+        raise Exception(f"get_id could not handle {type(elem)}")
     return int(id_)
+
+
+def get_element(doc, id_):
+    assert isinstance(doc, DB.Document)
+    assert isinstance(id_, (int, DB.ElementId))
+
+    if isinstance(id_, int):
+        id_ = DB.ElementId(id_)
+
+    elem = None
+    if isinstance(id_, DB.ElementId):
+        elem = doc.GetElement(id_)
+    return elem
+
+
+def get_parameter_value(elem, built_in_parameter):
+    assert isinstance(elem, DB.Element)
+    # pythonnet converts .NET enums to int, for now, and it is "fixed" in 3.0.0.
+    # https://stackoverflow.com/questions/65805093/pythonnet-why-are-net-enums-type-casted-to-int
+
+    # check both in case enum conversion is "fixed"
+    assert isinstance(built_in_parameter, (int, DB.BuiltInParameter))
+
+    param = elem.get_Parameter(built_in_parameter)
+
+    if isinstance(param, DB.Parameter):
+        storage_type = int(param.StorageType)
+        # None  	None represents an invalid storage type. This value should not be used.
+        # Integer	The internal data is stored in the form of a signed 32 bit integer.
+        # Double	The data will be stored internally in the form of an 8 byte floating point number.
+        # String	The internal data will be stored in the form of a string of characters.
+        # ElementId	The data type represents an element and is stored as the id of the element.
+
+        if storage_type == 1:  # Integer
+            return int(param.AsInteger())
+        elif storage_type == 2:  # Double
+            return float(param.AsDouble())
+        elif storage_type == 3:  # String
+            return str(param.AsString())
+        elif storage_type == 4:  # ElementId
+            return int(param.AsElementId().IntegerValue)
+        elif storage_type == 0:  # None, an invalid storage type
+            return None
+
+    return None  # ???
+
+
+def get_unbounded_height(room):
+    height = room.UnboundedHeight
+    # height = room.GetParameter(DB.ParameterTypeId.RoomHeight).AsDouble()
+    return Length.from_ft(height)
+
+
+### housingDNA logic that interact with revit/clr objects
+
+
+def pick_phase_by_views(doc):
+    assert isinstance(doc, DB.Document)
+
+    phase_ids = [get_id(p) for p in doc.Phases]
+
+    clr_views = get_all_by_category(doc, DB.BuiltInCategory.OST_Views)
+    view_phase_ids = [
+        get_parameter_value(v, DB.BuiltInParameter.VIEW_PHASE)
+        for v in clr_views
+        if isinstance(v, DB.View)
+    ]
+
+    # return the last phase in case of a tie
+    return max(reversed(phase_ids), key=view_phase_ids.count)
 
 
 def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnection]:
