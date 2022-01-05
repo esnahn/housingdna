@@ -38,10 +38,10 @@ from housingdna.revitapi import (
 )
 
 doc = get_revit_doc(__revit__)
+phase_id = pick_phase_by_views(doc)
+phase = get_element(doc, phase_id)
 
-print(get_name(get_element(doc, pick_phase_by_views(doc))))
-# print(dir(DB.ElementOnPhaseStatus))
-# # None name is reserved, throws error
-# print(getattr(DB.ElementOnPhaseStatus, "None"))  # 0
-# print(DB.ElementOnPhaseStatus.Existing)  # 2
-# print(DB.ElementOnPhaseStatus.New)  # 4
+clr_doors = get_all_by_category(doc, DB.BuiltInCategory.OST_Doors)
+# print(clr_doors[2].FromRoom(phase))  # not callable
+# print(clr_doors[2].FromRoom[phase])  # not subscriptable
+print(clr_doors[2].get_FromRoom(phase))

@@ -136,6 +136,26 @@ def get_unbounded_height(room):
     return Length.from_ft(height)
 
 
+def is_on_phase(elem, phase_id):
+    assert isinstance(elem, DB.Element)
+
+    if isinstance(phase_id, int):
+        phase_id = DB.ElementId(phase_id)
+    elif isinstance(phase_id, DB.Phase):
+        phase_id = phase_id.Id
+    assert isinstance(phase_id, DB.ElementId)
+
+    on_phase_enums = [
+        DB.ElementOnPhaseStatus.Existing,  # 2
+        DB.ElementOnPhaseStatus.New,  # 4
+        # or, at least, it does not have phase set
+        # None name is reserved, throws error
+        getattr(DB.ElementOnPhaseStatus, "None"),  # 0
+    ]
+
+    return elem.GetPhaseStatus(phase_id) in on_phase_enums
+
+
 ### housingDNA logic that interact with revit/clr objects
 
 
@@ -155,7 +175,18 @@ def pick_phase_by_views(doc):
     return max(reversed(phase_ids), key=view_phase_ids.count)
 
 
-def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnection]:
+def get_room_connections(
+    clr_rooms: Sequence,
+    clr_doors: Sequence,
+    id_sep_lines: Sequence,
+    phase=None,
+) -> Set[RoomConnection]:
+    if phase is not None:
+        assert isinstance(phase, DB.Phase)
+        phase_id = phase.Id
+    else:
+        phase_id = None
+
     opt = DB.SpatialElementBoundaryOptions()
     opt.SpatialElementBoundaryLocation = DB.SpatialElementBoundaryLocation.Center
 
@@ -163,14 +194,22 @@ def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnecti
 
     # get room connections by doors
     for door in clr_doors:
-        # TODO: fromroom toroom 의존하지 않기; 비어있는 경우가 있음
-        # Revit From/To Room field blank
-        # https://knowledge.autodesk.com/support/revit/troubleshooting/caas/sfdcarticles/sfdcarticles/Revit-From-To-Room-field-blank-in-Door-schedule.html
-        if door.FromRoom and door.ToRoom:
-            if door.FromRoom != door.ToRoom:
+        if phase is not None:
+            # FromRoom Property (Phase)
+            # https://www.revitapidocs.com/2022/c4a37990-0603-50e0-ca97-1cd5449940dd.htm
+            from_room = door.get_FromRoom(phase)
+            to_room = door.get_ToRoom(phase)
+        else:
+            # FromRoom Property: The "From Room" in the **last** phase of the project.
+            from_room = door.FromRoom
+            to_room = door.ToRoom
+
+        if from_room and to_room:
+            if from_room != to_room:
                 room_connections.add(
                     RoomConnection(
-                        *sorted(map(get_id, (door.FromRoom, door.ToRoom))),
+                        # sort the ids of two rooms
+                        *sorted(map(get_id, (from_room, to_room))),
                         type_=RevitObject.DOOR,
                     )
                 )
@@ -178,13 +217,14 @@ def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnecti
     # get room connections by room separation lines
     sep_rooms_dict = dict()
     for room in clr_rooms:
-        id_room = get_id(room)
+        if phase is not None and not is_on_phase(room, phase_id):
+            continue
 
         boundaries = itertools.chain.from_iterable(room.GetBoundarySegments(opt))
         id_boundaries = list(map(get_id, boundaries))
         for id_ in id_boundaries:
             if id_ in id_sep_lines:
-                sep_rooms_dict.setdefault(id_, set()).add(id_room)
+                sep_rooms_dict.setdefault(id_, set()).add(get_id(room))
 
     id_rooms_separated: Set[int]
     for id_rooms_separated in sep_rooms_dict.values():
@@ -202,6 +242,8 @@ def get_room_connections(clr_rooms, clr_doors, id_sep_lines) -> Set[RoomConnecti
 
 def get_model(uiapp):
     doc = get_revit_doc(uiapp)
+    phase_id = pick_phase_by_views(doc)
+    phase = get_element(doc, phase_id)
 
     clr_rooms = get_all_by_category(doc, DB.BuiltInCategory.OST_Rooms)
     clr_walls = get_all_by_category(doc, DB.BuiltInCategory.OST_Walls)
@@ -219,7 +261,7 @@ def get_model(uiapp):
     }
 
     _id_sep_lines = sorted(map(get_id, clr_sep_lines))
-    room_conns = get_room_connections(clr_rooms, clr_doors, _id_sep_lines)
+    room_conns = get_room_connections(clr_rooms, clr_doors, _id_sep_lines, phase)
 
     return House(
         rooms=tuple(rooms_dict.values()),

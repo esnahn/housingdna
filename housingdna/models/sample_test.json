@@ -1,0 +1,231 @@
+{
+    "rooms": [
+        {
+            "element_id": 857191,
+            "name": "Master Bedroom 206",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857194,
+            "name": "Master Bath 207",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857197,
+            "name": "Bedroom 204",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857200,
+            "name": "Bath 203",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857203,
+            "name": "Bath 205",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857206,
+            "name": "Bedroom 202",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857209,
+            "name": "Entry Hall 201",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857279,
+            "name": "Kitchen & Dining 101",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857292,
+            "name": "Laundry 104",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857346,
+            "name": "Bath 103",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857545,
+            "name": "Hall 105",
+            "height": {
+                "mm": 2700.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 857552,
+            "name": "Living 106",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 906922,
+            "name": "Mech. 102",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 940325,
+            "name": "Linen 208",
+            "height": {
+                "mm": 6500.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        }
+    ],
+    "room_connections": [
+        {
+            "a_id": 857200,
+            "b_id": 857206,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857191,
+            "b_id": 857194,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857197,
+            "b_id": 857203,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857191,
+            "b_id": 857209,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857206,
+            "b_id": 857209,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857279,
+            "b_id": 857545,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857292,
+            "b_id": 857346,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857279,
+            "b_id": 906922,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857209,
+            "b_id": 940325,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857545,
+            "b_id": 857552,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857197,
+            "b_id": 857209,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 857346,
+            "b_id": 857545,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        }
+    ],
+    "openings": [],
+    "room_opening_relations": [],
+    "__dataclass__": "House"
+}
