@@ -20,24 +20,46 @@ from .model import (
     Length,
     RoomConnection,
     RoomOpeningRelation,
+    multiple_sides,
 )
 
 from pathlib import PurePath
 
 # build mock.json
+
+# room element_id start with 373 are "main rooms"
+# ex) "373(생활공간:main rooms),376(부속실:sub rooms)+000"
+# windows=[1,2,3,4]
+
+
 rooms = (
-    Room(element_id=373987, name="거실 1", height=Length(mm=4000.0)),
-    Room(element_id=373990, name="침실 2", height=Length(mm=4000.0)),
-    Room(element_id=376804, name="드레스룸 6", height=Length(mm=7600.0)),
+    Room(element_id=373001, name="거실 1", height=Length(mm=4000.0)),
+    Room(element_id=373002, name="침실 2", height=Length(mm=4000.0)),
+    Room(element_id=376006, name="드레스룸 6", height=Length(mm=7600.0)),
+    Room(element_id=376003, name="발코니 3", height=Length(mm=7600.0)),
 )
 conns = (
-    RoomConnection(a_id=373990, b_id=376804, type_=RevitObject.ROOM_SEPARATION_LINE),
-    RoomConnection(a_id=373987, b_id=373990, type_=RevitObject.DOOR),
+    RoomConnection(a_id=373002, b_id=376006, type_=RevitObject.DOOR),
+    RoomConnection(a_id=373001, b_id=373002, type_=RevitObject.DOOR),
 )
-openings = (Opening(1, RevitObject.WINDOW, True),)
-rels = (RoomOpeningRelation(373990, 1, Direction.SOUTH),)
+openings = (
+    Opening(1, RevitObject.WINDOW, True),
+    Opening(2, RevitObject.WINDOW, False),
+    Opening(3, RevitObject.WINDOW, True),
+    Opening(4, RevitObject.CURTAIN_WALL, True),
+)
+
+rels = (
+    RoomOpeningRelation(373002, 2, (Direction.SOUTH,)),
+    RoomOpeningRelation(373001, 3, (Direction.SOUTH,)),
+    RoomOpeningRelation(376003, 1, (Direction.SOUTH,)),
+    RoomOpeningRelation(376003, 2, (Direction.NORTH,)),
+    RoomOpeningRelation(376006, 4, (Direction.NORTH, Direction.WEST)),
+)
+
+
 house = House(
     rooms=rooms, room_connections=conns, openings=openings, room_opening_relations=rels
 )
-house.to_json(PurePath(__file__).parent / "models/mock.json")
-print(House.from_json(PurePath(__file__).parent / "models/mock.json"))
+house.to_json(PurePath(__file__).parent / "models/gomock.json")
+print(House.from_json(PurePath(__file__).parent / "models/gomock.json"))

@@ -1,0 +1,148 @@
+{
+    "rooms": [
+        {
+            "element_id": 373001,
+            "name": "거실 1",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 373002,
+            "name": "침실 2",
+            "height": {
+                "mm": 4000.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 376006,
+            "name": "드레스룸 6",
+            "height": {
+                "mm": 7600.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 376003,
+            "name": "발코니 3",
+            "height": {
+                "mm": 7600.0,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        }
+    ],
+    "room_connections": [
+        {
+            "a_id": 373002,
+            "b_id": 376006,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 373001,
+            "b_id": 373002,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        }
+    ],
+    "openings": [
+        {
+            "element_id": 1,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Opening"
+        },
+        {
+            "element_id": 2,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": false,
+            "__dataclass__": "Opening"
+        },
+        {
+            "element_id": 3,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Opening"
+        },
+        {
+            "element_id": 4,
+            "type_": {
+                "__enum__": "RevitObject.CURTAIN_WALL"
+            },
+            "outmost": true,
+            "__dataclass__": "Opening"
+        }
+    ],
+    "room_opening_relations": [
+        {
+            "room_id": 373002,
+            "opening_id": 2,
+            "facing": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomOpeningRelation"
+        },
+        {
+            "room_id": 373001,
+            "opening_id": 3,
+            "facing": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomOpeningRelation"
+        },
+        {
+            "room_id": 376003,
+            "opening_id": 1,
+            "facing": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomOpeningRelation"
+        },
+        {
+            "room_id": 376003,
+            "opening_id": 2,
+            "facing": [
+                {
+                    "__enum__": "Direction.NORTH"
+                }
+            ],
+            "__dataclass__": "RoomOpeningRelation"
+        },
+        {
+            "room_id": 376006,
+            "opening_id": 4,
+            "facing": [
+                {
+                    "__enum__": "Direction.NORTH"
+                },
+                {
+                    "__enum__": "Direction.WEST"
+                }
+            ],
+            "__dataclass__": "RoomOpeningRelation"
+        }
+    ],
+    "__dataclass__": "House"
+}

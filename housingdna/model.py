@@ -187,11 +187,12 @@ class RoomConnection:
 class RoomOpeningRelation:
     """A relation between a room and an opening.
 
-    The facing indicates the compass direction from a room to an opening."""
+    The facing indicates the compass direction from a room to an opening.
+    A room and an opening can be related in multiple facings."""
 
     room_id: int
     opening_id: int
-    facing: Direction = field(compare=False)
+    facing: Tuple[Direction, ...] = field(compare=False)
 
 
 @dataclass(frozen=True)
