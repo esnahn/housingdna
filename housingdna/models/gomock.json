@@ -93,7 +93,7 @@
         {
             "room_id": 373002,
             "opening_id": 2,
-            "facing": [
+            "facings": [
                 {
                     "__enum__": "Direction.SOUTH"
                 }
@@ -103,7 +103,7 @@
         {
             "room_id": 373001,
             "opening_id": 3,
-            "facing": [
+            "facings": [
                 {
                     "__enum__": "Direction.SOUTH"
                 }
@@ -113,7 +113,7 @@
         {
             "room_id": 376003,
             "opening_id": 1,
-            "facing": [
+            "facings": [
                 {
                     "__enum__": "Direction.SOUTH"
                 }
@@ -123,7 +123,7 @@
         {
             "room_id": 376003,
             "opening_id": 2,
-            "facing": [
+            "facings": [
                 {
                     "__enum__": "Direction.NORTH"
                 }
@@ -133,7 +133,7 @@
         {
             "room_id": 376006,
             "opening_id": 4,
-            "facing": [
+            "facings": [
                 {
                     "__enum__": "Direction.NORTH"
                 },

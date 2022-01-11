@@ -192,7 +192,7 @@ class RoomOpeningRelation:
 
     room_id: int
     opening_id: int
-    facing: Tuple[Direction, ...] = field(compare=False)
+    facings: Tuple[Direction, ...] = field(compare=False)
 
 
 @dataclass(frozen=True)
