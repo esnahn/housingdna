@@ -1,4 +1,7 @@
-from typing import Sequence, Set, Tuple
+#! python3
+# type: ignore
+
+from typing import Mapping, NamedTuple, Sequence, Set, Tuple, Union, Optional
 import itertools
 
 from .model import House, Length, RevitObject, Room, RoomConnection
@@ -12,12 +15,12 @@ clr.AddReference("UIFramework")
 clr.AddReference("UIFrameworkServices")
 
 from Autodesk.Revit import DB  # type: ignore
-
+from Autodesk.Revit.UI import UIApplication
 
 ### revit interface
 
 
-def get_revit_doc(uiapp):
+def get_revit_doc(uiapp: UIApplication):
     uidoc = uiapp.ActiveUIDocument
     doc = uidoc.Document
     return doc
@@ -32,23 +35,30 @@ def get_project_path(obj):
         return None
 
 
-def get_all_by_category(doc, category):
+def get_all_by_category(doc: DB.Document, category):
     collector = (
         DB.FilteredElementCollector(doc)
         .OfCategory(category)
         .WhereElementIsNotElementType()
     )
-    return [elem for elem in collector]
+    return [get_id(elem) for elem in collector]
 
 
-def get_all_by_class(doc, type_):
+def get_all_by_class(doc: DB.Document, type_):
     collector = (
         DB.FilteredElementCollector(doc).OfClass(type_).WhereElementIsNotElementType()
     )
-    return [elem for elem in collector]
+    return [get_id(elem) for elem in collector]
 
 
-def get_name(elem):
+def get_name(
+    elem: Union[int, DB.ElementId, DB.Element], doc: Optional[DB.Document] = None
+):
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(doc, elem)
+
     try:
         return str(elem.Name)
     except:
@@ -70,7 +80,14 @@ def get_name(elem):
     raise Exception(f"get_name could not handle {type(elem)}")
 
 
-def get_id(elem):
+def get_id(
+    elem: Union[int, DB.ElementId, DB.Element], doc: Optional[DB.Document] = None
+):
+    if isinstance(elem, int):
+        return elem
+    elif isinstance(elem, DB.ElementId):
+        return elem.IntegerValue
+
     try:
         return int(elem.Id.IntegerValue)
     except:
@@ -85,10 +102,7 @@ def get_id(elem):
     return int(id_)
 
 
-def get_element(doc, id_):
-    assert isinstance(doc, DB.Document)
-    assert isinstance(id_, (int, DB.ElementId))
-
+def get_element(doc: DB.Document, id_: Union[int, DB.ElementId]):
     if isinstance(id_, int):
         id_ = DB.ElementId(id_)
 
@@ -98,52 +112,69 @@ def get_element(doc, id_):
     return elem
 
 
-def get_parameter_value(elem, built_in_parameter):
-    assert isinstance(elem, DB.Element)
+def get_parameter_value(
+    elem: Union[int, DB.ElementId, DB.Element],
     # pythonnet converts .NET enums to int, for now, and it is "fixed" in 3.0.0.
     # https://stackoverflow.com/questions/65805093/pythonnet-why-are-net-enums-type-casted-to-int
-
     # check both in case enum conversion is "fixed"
-    assert isinstance(built_in_parameter, (int, DB.BuiltInParameter))
+    built_in_parameter: Union[(int, DB.BuiltInParameter)],
+    doc: Optional[DB.Document] = None,
+):
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(doc, elem)
 
-    param = elem.get_Parameter(built_in_parameter)
+    param: DB.Parameter = elem.get_Parameter(built_in_parameter)
+    storage_type = int(param.StorageType)
+    # None  	None represents an invalid storage type. This value should not be used.
+    # Integer	The internal data is stored in the form of a signed 32 bit integer.
+    # Double	The data will be stored internally in the form of an 8 byte floating point number.
+    # String	The internal data will be stored in the form of a string of characters.
+    # ElementId	The data type represents an element and is stored as the id of the element.
 
-    if isinstance(param, DB.Parameter):
-        storage_type = int(param.StorageType)
-        # None  	None represents an invalid storage type. This value should not be used.
-        # Integer	The internal data is stored in the form of a signed 32 bit integer.
-        # Double	The data will be stored internally in the form of an 8 byte floating point number.
-        # String	The internal data will be stored in the form of a string of characters.
-        # ElementId	The data type represents an element and is stored as the id of the element.
-
-        if storage_type == 1:  # Integer
-            return int(param.AsInteger())
-        elif storage_type == 2:  # Double
-            return float(param.AsDouble())
-        elif storage_type == 3:  # String
-            return str(param.AsString())
-        elif storage_type == 4:  # ElementId
-            return int(param.AsElementId().IntegerValue)
-        elif storage_type == 0:  # None, an invalid storage type
-            return None
-
-    return None  # ???
+    if storage_type == 1:  # Integer
+        return int(param.AsInteger())
+    elif storage_type == 2:  # Double
+        return float(param.AsDouble())
+    elif storage_type == 3:  # String
+        return str(param.AsString())
+    elif storage_type == 4:  # ElementId
+        return int(param.AsElementId().IntegerValue)
+    elif storage_type == 0:  # None, an invalid storage type
+        return None
+    else:  # ???
+        raise
 
 
-def get_unbounded_height(room):
+def get_unbounded_height(
+    room: Union[int, DB.ElementId, DB.Architecture.Room],
+    doc: Optional[DB.Document] = None,
+) -> Length:
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(doc, elem)
+
     height = room.UnboundedHeight
     # height = room.GetParameter(DB.ParameterTypeId.RoomHeight).AsDouble()
     return Length.from_ft(height)
 
 
-def is_on_phase(elem, phase_id):
-    assert isinstance(elem, DB.Element)
+def is_on_phase(
+    elem: Union[int, DB.ElementId, DB.Element],
+    phase: Union[int, DB.ElementId, DB.Phase],
+    doc: Optional[DB.Document] = None,
+):
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(doc, elem)
 
-    if isinstance(phase_id, int):
-        phase_id = DB.ElementId(phase_id)
-    elif isinstance(phase_id, DB.Phase):
-        phase_id = phase_id.Id
-    assert isinstance(phase_id, DB.ElementId)
+    if isinstance(phase, int):
+        phase = DB.ElementId(phase)
+    elif isinstance(phase, DB.Phase):
+        phase = phase.Id
 
     on_phase_enums = [
         DB.ElementOnPhaseStatus.Existing,  # 2
@@ -153,26 +184,29 @@ def is_on_phase(elem, phase_id):
         getattr(DB.ElementOnPhaseStatus, "None"),  # 0
     ]
 
-    return elem.GetPhaseStatus(phase_id) in on_phase_enums
+    return elem.GetPhaseStatus(phase) in on_phase_enums
 
 
 ### housingDNA logic that interact with revit/clr objects
 
 
-def pick_phase_by_views(doc):
-    assert isinstance(doc, DB.Document)
+def pick_phase_by_views(doc: DB.Document) -> int:
+    phases = [get_id(p) for p in doc.Phases]
 
-    phase_ids = [get_id(p) for p in doc.Phases]
-
-    clr_views = get_all_by_category(doc, DB.BuiltInCategory.OST_Views)
-    view_phase_ids = [
-        get_parameter_value(v, DB.BuiltInParameter.VIEW_PHASE)
-        for v in clr_views
-        if isinstance(v, DB.View)
-    ]
-
+    views = get_all_by_category(doc, DB.BuiltInCategory.OST_Views)
+    view_phases = []
+    for view in views:
+        try:
+            view_phases.append(
+                get_parameter_value(view, DB.BuiltInParameter.VIEW_PHASE)
+            )
+        except:
+            pass
     # return the last phase in case of a tie
-    return max(reversed(phase_ids), key=view_phase_ids.count)
+    return int(max(reversed(phases), key=view_phases.count))
+
+
+# TODO: Separate clr calls and pure python logic
 
 
 def get_room_connections(
