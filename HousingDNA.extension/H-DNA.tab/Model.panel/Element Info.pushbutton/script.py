@@ -1,4 +1,5 @@
 #! python3
+# type: ignore
 
 # can't do relative import
 import sys
@@ -42,6 +43,15 @@ selection = uidoc.Selection
 # Autodesk.Revit.UI.Selection.Selection
 
 selected_ids = selection.GetElementIds()
-for id_ in selected_ids:
-    print(int(id_.IntegerValue))
-    info(get_element(doc, id_))
+if len(selected_ids) == 1:
+    for id_ in selected_ids:
+        print(int(id_.IntegerValue))
+        info(get_element(doc, id_))
+elif len(selected_ids) > 1:
+    info_pairs = dict()
+    for id_ in selected_ids:
+        key = int(id_.IntegerValue)
+        val = str(get_element(doc, id_))
+        info_pairs.setdefault(val, []).append(key)
+    for key, val in info_pairs.items():
+        print(key, val)
