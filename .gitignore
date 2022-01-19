@@ -54,6 +54,9 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# type stubs
+*.pyi
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
