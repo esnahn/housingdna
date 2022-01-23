@@ -161,16 +161,17 @@ class Room:
 
 
 @dataclass(frozen=True)
-class Opening:
+class Glazing:
     """A transparent boundary of room(s).
 
-    A glazed Window, a curtain wall, or an imaginary line that separates rooms.
+    A glazed window, a glass door, a curtain wall, or an imaginary line that
+    separates rooms.
 
     Openings with same elementId will be treated as same and deduplicated in sets.
     """
 
     element_id: int
-    type_: Glazing = field(compare=False)
+    type_: RevitObject = field(compare=False)
     outmost: bool = field(compare=False)
 
 
@@ -184,14 +185,14 @@ class RoomConnection:
 
 
 @dataclass(frozen=True)
-class RoomOpeningRelation:
-    """A relation between a room and an opening.
+class RoomGlazingRelation:
+    """A relation between a room and a glazing.
 
-    The facing indicates the compass direction from a room to an opening.
-    A room and an opening can be related in multiple facings."""
+    The facing indicates the compass direction from a room to a glazing.
+    A room can face a glazing in multiple directions."""
 
     room_id: int
-    opening_id: int
+    glazing_id: int
     facings: Tuple[Direction, ...] = field(compare=False)
 
 
@@ -203,11 +204,11 @@ class House:
     >>> kitchen = Room(element_id=1, name='주방', height=Length.from_ft(10))
     >>> bedroom = Room(element_id=2, name='침실', height=Length.from_ft(8))
 
-    >>> bed_window = Opening(10, RevitObject.WINDOW, outmost=True)
-    >>> ldk_line = Opening(11, RevitObject.ROOM_SEPARATION_LINE, outmost=False)
+    >>> bed_window = Glazing(10, RevitObject.WINDOW, outmost=True)
+    >>> ldk_line = Glazing(11, RevitObject.ROOM_SEPARATION_LINE, outmost=False)
 
     >>> rooms = (living_room, kitchen, bedroom)
-    >>> openings = (bed_window, ldk_line)
+    >>> glazings = (bed_window, ldk_line)
 
     >>> conns = (
     ...     RoomConnection(
@@ -223,32 +224,32 @@ class House:
     ... )
 
     >>> rels = (
-    ...     RoomOpeningRelation(
+    ...     RoomGlazingRelation(
     ...         bedroom.element_id,
     ...         bed_window.element_id,
-    ...         Direction.SOUTH,
+    ...         (Direction.SOUTH,),
     ...     ),
-    ...     RoomOpeningRelation(
+    ...     RoomGlazingRelation(
     ...         living_room.element_id,
     ...         ldk_line.element_id,
-    ...         Direction.EAST,
+    ...         (Direction.EAST,),
     ...     ),
-    ...     RoomOpeningRelation(
+    ...     RoomGlazingRelation(
     ...         kitchen.element_id,
     ...         ldk_line.element_id,
-    ...         Direction.WEST,  # opposite of facing from living room
+    ...         (Direction.WEST,),  # opposite of facing from living room
     ...     ),
     ... )
 
     >>> house = House(
     ...     rooms=rooms,
     ...     room_connections=conns,
-    ...     openings=openings,
-    ...     room_opening_relations=rels,
+    ...     glazings=glazings,
+    ...     room_glazing_relations=rels,
     ... )
     >>> house  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
     House(rooms=(Room(element_id=0, name='거실', height=Length(mm=3048.0)), ...
-    RoomOpeningRelation(room_id=1, opening_id=11, facing=<Direction.WEST: 7>)))
+    RoomGlazingRelation(room_id=1, glazing_id=11, facings=(<Direction.WEST: 7>,))))
     >>> house.to_json("test.json")
     >>> d = House.from_json("test.json")
     >>> house == d
@@ -257,8 +258,8 @@ class House:
 
     rooms: Tuple[Room, ...] = tuple()
     room_connections: Tuple[RoomConnection, ...] = tuple()
-    openings: Tuple[Opening, ...] = tuple()
-    room_opening_relations: Tuple[RoomOpeningRelation, ...] = tuple()
+    glazings: Tuple[Glazing, ...] = tuple()
+    room_glazing_relations: Tuple[RoomGlazingRelation, ...] = tuple()
 
     def to_json(self, path):
         filepath = Path(path)

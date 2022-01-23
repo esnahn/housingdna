@@ -14,12 +14,12 @@ from os import terminal_size
 from .model import (
     Direction,
     House,
-    Opening,
+    Glazing,
     RevitObject,
     Room,
     Length,
     RoomConnection,
-    RoomOpeningRelation,
+    RoomGlazingRelation,
     multiple_sides,
 )
 
@@ -43,23 +43,23 @@ conns = (
     RoomConnection(a_id=373001, b_id=373002, type_=RevitObject.DOOR),
 )
 openings = (
-    Opening(1, RevitObject.WINDOW, True),
-    Opening(2, RevitObject.WINDOW, False),
-    Opening(3, RevitObject.WINDOW, True),
-    Opening(4, RevitObject.CURTAIN_WALL, True),
+    Glazing(1, RevitObject.WINDOW, True),
+    Glazing(2, RevitObject.WINDOW, False),
+    Glazing(3, RevitObject.WINDOW, True),
+    Glazing(4, RevitObject.CURTAIN_WALL, True),
 )
 
 rels = (
-    RoomOpeningRelation(373002, 2, (Direction.SOUTH,)),
-    RoomOpeningRelation(373001, 3, (Direction.SOUTH,)),
-    RoomOpeningRelation(376003, 1, (Direction.SOUTH,)),
-    RoomOpeningRelation(376003, 2, (Direction.NORTH,)),
-    RoomOpeningRelation(376006, 4, (Direction.NORTH, Direction.WEST)),
+    RoomGlazingRelation(373002, 2, (Direction.SOUTH,)),
+    RoomGlazingRelation(373001, 3, (Direction.SOUTH,)),
+    RoomGlazingRelation(376003, 1, (Direction.SOUTH,)),
+    RoomGlazingRelation(376003, 2, (Direction.NORTH,)),
+    RoomGlazingRelation(376006, 4, (Direction.NORTH, Direction.WEST)),
 )
 
 
 house = House(
-    rooms=rooms, room_connections=conns, openings=openings, room_opening_relations=rels
+    rooms=rooms, room_connections=conns, glazings=openings, room_glazing_relations=rels
 )
 house.to_json(PurePath(__file__).parent / "models/gomock.json")
 print(House.from_json(PurePath(__file__).parent / "models/gomock.json"))
