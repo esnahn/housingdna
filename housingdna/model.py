@@ -4,7 +4,42 @@ from pathlib import Path, PurePath
 from itertools import combinations
 import dataclasses
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Literal, Mapping, Sequence, Set, Tuple
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
+
+# raw (as you can get) data model from Revit
+@dataclass
+class RevitInfo:
+    doc_name: Optional[str] = None
+    true_north: float = 0
+
+    phase: Optional[int] = None
+    rooms: List[int] = field(default_factory=list)
+    doors: List[int] = field(default_factory=list)
+    windows: List[int] = field(default_factory=list)
+    curtain_walls: List[int] = field(default_factory=list)
+    separation_lines: List[int] = field(default_factory=list)
+
+    names: Dict[int, str] = field(default_factory=dict)
+    heights: Dict[int, float] = field(default_factory=dict)
+    transparencies: Dict[int, int] = field(default_factory=dict)
+    boundary_segments: Dict[int, Set[int]] = field(default_factory=dict)
+    rel_rooms: Dict[int, Set[int]] = field(default_factory=dict)
+    points: Dict[int, Tuple[float, float]] = field(default_factory=dict)
+    lines: Dict[int, List[Tuple[float, float]]] = field(default_factory=dict)
+    boundaries: Dict[int, List[List[Tuple[float, float]]]] = field(default_factory=dict)
+
+
+### Dataclasses for the housing model
 
 
 @unique
@@ -19,15 +54,10 @@ class RevitObject(Enum):
 
 
 Access = Literal[RevitObject.DOOR, RevitObject.ROOM_SEPARATION_LINE]
-Glazing = Literal[
-    RevitObject.WINDOW,
-    RevitObject.CURTAIN_WALL,
-    RevitObject.ROOM_SEPARATION_LINE,
-]  # is a part of a wall or window, made of glass.
 
 
 class Direction(Enum):
-    """Compass directions Enum in 8 ways.
+    """Compass directions Enum in horizontal 8 ways and vertical 2 ways.
 
     >>> dir_list = [Direction.SOUTH, Direction.SOUTHEAST]
     >>> Direction.SOUTH in dir_list
@@ -50,22 +80,33 @@ class Direction(Enum):
     WEST = 7
     NORTHWEST = 8
 
+    UP = 1024
+    DOWN = -1024
+
     def opposite(self):
         """Return the opposite direction of itself.
 
         >>> d = Direction.NORTH
         >>> d.opposite()
         <Direction.SOUTH: 5>
-
         >>> Direction.SOUTH.opposite()
         <Direction.NORTH: 1>
         >>> Direction.SOUTHEAST.opposite()
         <Direction.NORTHWEST: 8>
+
+        >>> Direction.UP.opposite()
+        <Direction.DOWN: -1024>
         """
-        return Direction((self.value - 1 + 4) % 8 + 1)
+
+        if 1 <= self.value <= 8:
+            return Direction((self.value - 1 + 4) % 8 + 1)
+        elif self is Direction.UP or self is Direction.DOWN:
+            return Direction(-self.value)
+        else:
+            raise Exception(f"{self} can't be happening")
 
 
-def multiple_sides(directions: Set) -> bool:
+def multiple_sides(directions: Set[Direction]) -> bool:
     """Check if there are directions that point different sides.
 
     fuzziness makes two neighboring directions equal to each other.
@@ -74,18 +115,34 @@ def multiple_sides(directions: Set) -> bool:
     False
 
     Difference beyond fuzziness returns True.
-    >>> dir_set.add(Direction.EAST)
-    >>> print("Multiple sides" if multiple_sides(dir_set) else "Nope")
-    Multiple sides
+    >>> dir_set = {Direction.NORTH, Direction.EAST}
+    >>> multiple_sides(dir_set)
+    True
+
+    Up and down are their own differentiated side.
+    >>> dir_set = {Direction.NORTH, Direction.UP}
+    >>> multiple_sides(dir_set)
+    True
+    >>> dir_set = {Direction.UP, Direction.DOWN}
+    >>> multiple_sides(dir_set)
+    True
     """
 
     num_directions = 8
     fuzziness = 1
+
+    vertical = 1000
     return any(
-        abs(a.value - b.value) > fuzziness
-        and abs(a.value - b.value) < num_directions - fuzziness
+        # they are different in 3-dimensional way
+        (abs(a.value - b.value) > vertical)
+        or (  # or,
+            # they are different enough in 2d plane
+            abs(a.value - b.value) > fuzziness
+            # and it is not because they are wrapping around
+            and (abs(a.value - b.value) < num_directions - fuzziness)
+        )
         for a, b in combinations(directions, 2)
-    )
+    )  # in any combination of two directions
 
 
 @dataclass(frozen=True)
@@ -113,7 +170,7 @@ class Length:
         object.__setattr__(self, "mm", round(self.mm, 2))
 
     @classmethod
-    def from_ft(cls, val_in_feet):
+    def from_ft(cls, val_in_feet: Union[float, int]):
         return cls(val_in_feet * 304.8)
 
 
@@ -181,7 +238,7 @@ class RoomConnection:
 
     a_id: int
     b_id: int
-    type_: Access
+    type_: Access  # A subset of revit objects that allows access through it.
 
 
 @dataclass(frozen=True)
@@ -261,7 +318,7 @@ class House:
     glazings: Tuple[Glazing, ...] = tuple()
     room_glazing_relations: Tuple[RoomGlazingRelation, ...] = tuple()
 
-    def to_json(self, path):
+    def to_json(self, path: Union[str, Path, PurePath]):
         filepath = Path(path)
         if not filepath.parent.exists():
             filepath.parent.mkdir(parents=True)
@@ -272,7 +329,7 @@ class House:
             )
 
     @classmethod
-    def from_json(cls, path):
+    def from_json(cls, path: Union[str, Path, PurePath]):
         with open(str(path), encoding="utf-8") as file:
             obj = json.load(file, object_hook=to_nested_dataclass)
         return obj if isinstance(obj, cls) else None
@@ -281,7 +338,7 @@ class House:
 ### JSON
 
 
-def is_dataclass_instance(obj):
+def is_dataclass_instance(obj: Any):
     """Returns True if a class is an instance of a dataclass (and not a
     dataclass itself)
     """

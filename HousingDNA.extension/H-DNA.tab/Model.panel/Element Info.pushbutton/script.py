@@ -46,12 +46,12 @@ selected_ids = selection.GetElementIds()
 if len(selected_ids) == 1:
     for id_ in selected_ids:
         print(int(id_.IntegerValue))
-        info(get_element(doc, id_))
+        info(get_element(id_, doc))
 elif len(selected_ids) > 1:
     info_pairs = dict()
     for id_ in selected_ids:
         key = int(id_.IntegerValue)
-        val = str(get_element(doc, id_))
+        val = str(get_element(id_, doc))
         info_pairs.setdefault(val, []).append(key)
     for key, val in info_pairs.items():
         print(key, val)

@@ -1,21 +1,30 @@
 #! python3
-# type: ignore
 
-from typing import Mapping, NamedTuple, Sequence, Set, Tuple, Union, Optional
+from typing import (
+    List,
+    Tuple,
+    Union,
+    Optional,
+)
 import itertools
+from pathlib import PurePath
 
-from .model import House, Length, RevitObject, Room, RoomConnection
+from .model import RevitInfo
 
-import clr
+### if it's already used by pyrevit...
+# import clr
 
-clr.AddReference("RevitAPI")
-clr.AddReference("RevitAPIUI")
-clr.AddReference("AdWindows")
-clr.AddReference("UIFramework")
-clr.AddReference("UIFrameworkServices")
+# clr.AddReference("RevitAPI")
+# clr.AddReference("RevitAPIUI")
+# clr.AddReference("AdWindows")
+# clr.AddReference("UIFramework")
+# clr.AddReference("UIFrameworkServices")
 
-from Autodesk.Revit import DB  # type: ignore
-from Autodesk.Revit.UI import UIApplication
+try:
+    from Autodesk.Revit import DB  # type: ignore
+    from Autodesk.Revit.UI import UIApplication  # type: ignore
+except:
+    print("welcome, another lost soul...")
 
 ### revit interface
 
@@ -26,11 +35,11 @@ def get_revit_doc(uiapp: UIApplication):
     return doc
 
 
-def get_project_path(obj):
+def get_project_path(obj) -> Optional[str]:
     if hasattr(obj, "PathName"):
-        return obj.PathName
+        return str(obj.PathName)
     elif hasattr(obj, "ActiveUIDocument"):
-        return get_revit_doc(obj).PathName
+        return str(get_revit_doc(obj).PathName)
     else:
         return None
 
@@ -57,13 +66,16 @@ def get_name(
     if isinstance(elem, (int, DB.ElementId)):
         if doc is None:
             raise
-        elem = get_element(doc, elem)
+        elem = get_element(elem, doc)
 
     try:
         return str(elem.Name)
     except:
         pass
-
+    try:
+        return str(elem.get_Name())
+    except:
+        pass
     # .NET property not accessible in derived classes
     # where only the setter or the getter has been overridden
     # https://github.com/pythonnet/pythonnet/issues/1455
@@ -80,13 +92,14 @@ def get_name(
     raise Exception(f"get_name could not handle {type(elem)}")
 
 
-def get_id(
-    elem: Union[int, DB.ElementId, DB.Element], doc: Optional[DB.Document] = None
-):
+def get_id(elem: Union[int, DB.ElementId, DB.Element]) -> int:
     if isinstance(elem, int):
         return elem
     elif isinstance(elem, DB.ElementId):
-        return elem.IntegerValue
+        try:
+            return int(elem.get_IntegerValue())
+        except:
+            return int(elem.IntegerValue)
 
     try:
         return int(elem.Id.IntegerValue)
@@ -102,14 +115,15 @@ def get_id(
     return int(id_)
 
 
-def get_element(doc: DB.Document, id_: Union[int, DB.ElementId]):
+def get_element(id_: Union[int, DB.ElementId], doc: DB.Document):
     if isinstance(id_, int):
         id_ = DB.ElementId(id_)
 
-    elem = None
-    if isinstance(id_, DB.ElementId):
+    if isinstance(id_, DB.ElementId) and isinstance(doc, DB.Document):
         elem = doc.GetElement(id_)
-    return elem
+        return elem
+    else:
+        raise Exception(f"no {id_} in {doc}")
 
 
 def get_parameter_value(
@@ -123,7 +137,7 @@ def get_parameter_value(
     if isinstance(elem, (int, DB.ElementId)):
         if doc is None:
             raise
-        elem = get_element(doc, elem)
+        elem = get_element(elem, doc)
 
     param: DB.Parameter = elem.get_Parameter(built_in_parameter)
     storage_type = int(param.StorageType)
@@ -150,15 +164,15 @@ def get_parameter_value(
 def get_unbounded_height(
     room: Union[int, DB.ElementId, DB.Architecture.Room],
     doc: Optional[DB.Document] = None,
-) -> Length:
-    if isinstance(elem, (int, DB.ElementId)):
+) -> float:
+    if isinstance(room, (int, DB.ElementId)):
         if doc is None:
             raise
-        elem = get_element(doc, elem)
+        room = get_element(room, doc)
 
     height = room.UnboundedHeight
     # height = room.GetParameter(DB.ParameterTypeId.RoomHeight).AsDouble()
-    return Length.from_ft(height)
+    return float(height)
 
 
 def is_on_phase(
@@ -169,7 +183,7 @@ def is_on_phase(
     if isinstance(elem, (int, DB.ElementId)):
         if doc is None:
             raise
-        elem = get_element(doc, elem)
+        elem = get_element(elem, doc)
 
     if isinstance(phase, int):
         phase = DB.ElementId(phase)
@@ -187,6 +201,142 @@ def is_on_phase(
     return elem.GetPhaseStatus(phase) in on_phase_enums
 
 
+def get_true_north(doc: DB.Document) -> float:
+    pl = doc.ActiveProjectLocation
+    pp = pl.GetProjectPosition(DB.XYZ.Zero)
+    return float(pp.Angle)  # in radian, from -pi to pi
+
+
+def is_curtain_wall(
+    wall: Union[int, DB.ElementId, DB.Wall], doc: Optional[DB.Document] = None
+) -> bool:
+    if isinstance(wall, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        wall = get_element(wall, doc)
+
+    return bool(wall.WallType.Kind == DB.WallKind.Curtain)
+
+
+def is_placed_room(
+    room: Union[int, DB.ElementId, DB.Architecture.Room],
+    doc: Optional[DB.Document] = None,
+) -> bool:
+    if isinstance(room, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        room = get_element(room, doc)
+
+    # if not isinstance(room, DB.Architecture.Room):
+    #     raise
+    # assuming a room, won't check
+
+    return bool(room.Area and room.Location)
+
+
+def get_boundaries(
+    room: Union[int, DB.ElementId, DB.Architecture.Room],
+    phase: Optional[Union[int, DB.ElementId, DB.Phase]] = None,
+    doc: Optional[DB.Document] = None,
+) -> Optional[Tuple[int, ...]]:
+    if isinstance(room, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        room = get_element(room, doc)
+
+    if not isinstance(room, DB.Architecture.Room):
+        raise
+    # assuming a room
+
+    # if the room in not on the phase
+    if phase is not None and not is_on_phase(room, phase):
+        return None
+
+    try:
+        boundary_opt = DB.SpatialElementBoundaryOptions()
+        boundary_opt.SpatialElementBoundaryLocation = (
+            DB.SpatialElementBoundaryLocation.Center
+        )
+        boundary_opt.StoreFreeBoundaryFaces = True
+
+        seglistlist = room.GetBoundarySegments(boundary_opt)
+        return tuple(
+            int(seg.ElementId.IntegerValue)
+            for seg in itertools.chain.from_iterable(seglistlist)
+        )
+    except:
+        return tuple()
+
+
+def get_from_to_rooms(
+    elem: Union[int, DB.ElementId, DB.FamilyInstance],
+    phase: Optional[Union[int, DB.ElementId, DB.Phase]] = None,
+    doc: Optional[DB.Document] = None,
+) -> Tuple[int, ...]:
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(elem, doc)
+    if isinstance(phase, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        phase = get_element(phase, doc)
+
+    if not isinstance(elem, DB.FamilyInstance):
+        raise
+    # assuming a door or a window
+
+    try:
+        if phase is not None:
+            # FromRoom Property (Phase)
+            # https://www.revitapidocs.com/2022/c4a37990-0603-50e0-ca97-1cd5449940dd.htm
+            from_room = elem.get_FromRoom(phase)
+            to_room = elem.get_ToRoom(phase)
+        else:
+            # FromRoom Property: The "From Room" in the **last** phase of the project.
+            from_room = elem.FromRoom
+            to_room = elem.ToRoom
+        return tuple(get_id(room) for room in set([from_room, to_room]) if room)
+    except:
+        return tuple()
+
+
+def get_transparency(
+    elem: Union[int, DB.ElementId, DB.FamilyInstance],
+    doc: DB.Document,
+) -> int:
+    if isinstance(elem, (int, DB.ElementId)):
+        # if doc is None:
+        #     raise ValueError("doc")
+        elem = get_element(elem, doc)
+
+    if not isinstance(elem, DB.FamilyInstance):
+        raise TypeError(type(elem))
+    if not (
+        elem.Category.Id.IntegerValue
+        == DB.Category.GetCategory(doc, DB.BuiltInCategory.OST_Doors).Id.IntegerValue
+    ):
+        raise NotImplementedError(elem.Category.Name)
+
+    material_ids = elem.Symbol.GetMaterialIds(False)  # not PaintMaterials
+
+    results: List[Tuple[int, float, int]] = []
+
+    for id_ in material_ids:
+        material = get_element(id_, doc)
+        results.append(
+            (
+                int(id_.IntegerValue),
+                float(elem.GetMaterialArea(id_, False)),  # not PaintMaterials
+                int(material.Transparency),
+            )
+        )
+
+    max_area = max(result[1] for result in results)
+    transparency = max(result[2] for result in results if result[1] >= max_area)
+    return transparency
+
+
 ### housingDNA logic that interact with revit/clr objects
 
 
@@ -198,106 +348,203 @@ def pick_phase_by_views(doc: DB.Document) -> int:
     for view in views:
         try:
             view_phases.append(
-                get_parameter_value(view, DB.BuiltInParameter.VIEW_PHASE)
+                get_parameter_value(view, DB.BuiltInParameter.VIEW_PHASE, doc)
             )
         except:
             pass
+
+    # sanity check: there are phases in the views
+    if not view_phases:
+        raise
+
     # return the last phase in case of a tie
     return int(max(reversed(phases), key=view_phases.count))
 
 
-# TODO: Separate clr calls and pure python logic
+def eval_curve(curve: DB.Curve, first=False, division=8) -> List[Tuple[float, float]]:
+    points = []
 
-
-def get_room_connections(
-    clr_rooms: Sequence,
-    clr_doors: Sequence,
-    id_sep_lines: Sequence,
-    phase=None,
-) -> Set[RoomConnection]:
-    if phase is not None:
-        assert isinstance(phase, DB.Phase)
-        phase_id = phase.Id
+    if curve.IsBound:
+        param_start = curve.GetEndParameter(0)
+        param_end = curve.GetEndParameter(1)
+    elif isinstance(curve, (DB.Arc, DB.Ellipse)):  # unbound arc: circle or ellipse
+        param_start = 0
+        param_end = 2 * math.pi
     else:
-        phase_id = None
+        raise  # no unbound spline, or etc.
 
-    opt = DB.SpatialElementBoundaryOptions()
-    opt.SpatialElementBoundaryLocation = DB.SpatialElementBoundaryLocation.Center
+    d_param = (param_end - param_start) / division
 
-    room_connections = set()
+    for i in range(0 if first else 1, division + 1):
+        point = curve.Evaluate(param_start + i * d_param, False)
+        points.append((float(point.X), float(point.Y)))
 
-    # get room connections by doors
-    for door in clr_doors:
-        if phase is not None:
-            # FromRoom Property (Phase)
-            # https://www.revitapidocs.com/2022/c4a37990-0603-50e0-ca97-1cd5449940dd.htm
-            from_room = door.get_FromRoom(phase)
-            to_room = door.get_ToRoom(phase)
+    return points
+
+
+def get_points_2d(
+    curve: DB.Curve, first=False, division=8
+) -> List[Tuple[float, float]]:
+    if isinstance(curve, DB.Line):
+        if curve.IsBound:
+            points = []
+
+            for i in [0, 1] if first else [1]:
+                point = curve.GetEndPoint(i)
+                points.append((float(point.X), float(point.Y)))
+
+            return points
         else:
-            # FromRoom Property: The "From Room" in the **last** phase of the project.
-            from_room = door.FromRoom
-            to_room = door.ToRoom
-
-        if from_room and to_room:
-            if from_room != to_room:
-                room_connections.add(
-                    RoomConnection(
-                        # sort the ids of two rooms
-                        *sorted(map(get_id, (from_room, to_room))),
-                        type_=RevitObject.DOOR,
-                    )
-                )
-
-    # get room connections by room separation lines
-    sep_rooms_dict = dict()
-    for room in clr_rooms:
-        if phase is not None and not is_on_phase(room, phase_id):
-            continue
-
-        boundaries = itertools.chain.from_iterable(room.GetBoundarySegments(opt))
-        id_boundaries = list(map(get_id, boundaries))
-        for id_ in id_boundaries:
-            if id_ in id_sep_lines:
-                sep_rooms_dict.setdefault(id_, set()).add(get_id(room))
-
-    id_rooms_separated: Set[int]
-    for id_rooms_separated in sep_rooms_dict.values():
-        if len(id_rooms_separated) >= 2:
-            for id_pair in itertools.combinations(id_rooms_separated, 2):
-                room_connections.add(
-                    RoomConnection(
-                        *sorted(id_pair),
-                        type_=RevitObject.ROOM_SEPARATION_LINE,
-                    )
-                )
-
-    return room_connections
+            raise  # no unbound line
+    else:
+        return eval_curve(curve, first, division)
 
 
-def get_model(uiapp):
-    doc = get_revit_doc(uiapp)
-    phase_id = pick_phase_by_views(doc)
-    phase = get_element(doc, phase_id)
+def get_location_2d(
+    elem: Union[int, DB.ElementId, DB.FamilyInstance],
+    doc: Optional[DB.Document] = None,
+) -> Optional[Tuple[float, float]]:
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(elem, doc)
 
-    clr_rooms = get_all_by_category(doc, DB.BuiltInCategory.OST_Rooms)
-    clr_walls = get_all_by_category(doc, DB.BuiltInCategory.OST_Walls)
-    clr_doors = get_all_by_category(doc, DB.BuiltInCategory.OST_Doors)
-    clr_sep_lines = get_all_by_category(doc, DB.BuiltInCategory.OST_RoomSeparationLines)
+    if not isinstance(elem, DB.FamilyInstance):
+        raise
+    # assuming a door or a window
 
-    rooms_dict = {
-        (id_ := get_id(room)): Room(
-            element_id=id_,
-            name=get_name(room),
-            height=get_unbounded_height(room),
+    try:
+        loc = elem.Location.Point
+        return (float(loc.X), float(loc.Y))
+    except:
+        return None
+
+
+def get_shape_2d(
+    elem: Union[int, DB.ElementId, DB.Wall, DB.ModelCurve],
+    division=8,
+    doc: Optional[DB.Document] = None,
+) -> Optional[List[Tuple[float, float]]]:
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(elem, doc)
+
+    if not isinstance(elem, (DB.Wall, DB.ModelCurve)):
+        raise
+    # assuming a wall or a separation line
+
+    try:
+        return get_points_2d(elem.Location.Curve, first=True)
+    except:
+        return None
+
+
+def get_boundary_2d(
+    elem: Union[int, DB.ElementId, DB.SpatialElement],
+    division=8,
+    doc: Optional[DB.Document] = None,
+) -> Optional[List[List[Tuple[float, float]]]]:
+    if isinstance(elem, (int, DB.ElementId)):
+        if doc is None:
+            raise
+        elem = get_element(elem, doc)
+
+    if not isinstance(elem, DB.SpatialElement):
+        raise
+    # assuming a room
+
+    try:
+        boundary_opt = DB.SpatialElementBoundaryOptions()
+        boundary_opt.SpatialElementBoundaryLocation = (
+            DB.SpatialElementBoundaryLocation.Center
         )
-        for room in clr_rooms
-        if room.Area and room.Location
+        boundary_opt.StoreFreeBoundaryFaces = True
+
+        seglistlist = elem.GetBoundarySegments(boundary_opt)
+
+        rings = []
+        for seglist in seglistlist:
+            first = True
+
+            ring = []
+            for seg in seglist:
+                curve = seg.GetCurve()
+                ring.extend(get_points_2d(curve, first, division))
+
+                first = False
+
+            rings.append(ring)
+
+        return rings
+    except:
+        return None
+
+
+def get_revit_info(uiapp: UIApplication) -> RevitInfo:
+    doc = get_revit_doc(uiapp)
+
+    print("preparing...")
+    r = RevitInfo()  # return data class
+
+    r.doc_name = (
+        PurePath(doc_path).name if (doc_path := get_project_path(uiapp)) else None
+    )
+    r.true_north = get_true_north(doc)
+
+    r.phase = pick_phase_by_views(doc)
+
+    print("get elements...")
+    all_rooms = get_all_by_category(doc, DB.BuiltInCategory.OST_Rooms)
+    r.rooms = [room for room in all_rooms if is_placed_room(room, doc)]
+
+    r.doors = get_all_by_category(doc, DB.BuiltInCategory.OST_Doors)
+    r.windows = get_all_by_category(doc, DB.BuiltInCategory.OST_Windows)
+
+    walls = get_all_by_category(doc, DB.BuiltInCategory.OST_Walls)
+    r.curtain_walls = [wall for wall in walls if is_curtain_wall(wall, doc)]
+    r.separation_lines = get_all_by_category(
+        doc, DB.BuiltInCategory.OST_RoomSeparationLines
+    )
+
+    print("get attributes...")
+    r.names = {elem: get_name(elem, doc) for elem in r.rooms}
+    r.heights = {elem: get_unbounded_height(elem, doc) for elem in r.rooms}
+    r.transparencies = {elem: get_transparency(elem, doc) for elem in r.doors}
+    print("wait...")
+    r.boundary_segments = {
+        elem: set(segs)
+        for elem in r.rooms
+        if (segs := get_boundaries(elem, r.phase, doc))
     }
 
-    _id_sep_lines = sorted(map(get_id, clr_sep_lines))
-    room_conns = get_room_connections(clr_rooms, clr_doors, _id_sep_lines, phase)
+    r.rel_rooms = {}
+    # from room and to room of doors and windows
+    for elem in r.doors + r.windows:
+        r.rel_rooms.setdefault(elem, set()).update(
+            get_from_to_rooms(elem, r.phase, doc)
+        )
+    # rooms bounded curtain walls and separation lines
+    for room, segs in r.boundary_segments.items():
+        for elem in segs:
+            if elem in r.curtain_walls + r.separation_lines:
+                r.rel_rooms.setdefault(elem, set()).add(room)
 
-    return House(
-        rooms=tuple(rooms_dict.values()),
-        room_connections=tuple(room_conns),
-    )
+    print("get shapes...")
+    # 2d point for doors and windows
+    r.points = {
+        elem: loc for elem in r.doors + r.windows if (loc := get_location_2d(elem, doc))
+    }
+    # 2d polyline for walls and lines
+    r.lines = {
+        elem: shape
+        for elem in r.curtain_walls + r.separation_lines
+        if (shape := get_shape_2d(elem, doc=doc))
+    }
+    # 2d rings (with shell in [0] and holes in [1:]) for rooms
+    r.boundaries = {
+        elem: rings for elem in r.rooms if (rings := get_boundary_2d(elem, doc=doc))
+    }
+
+    print("done with revit 👋")
+    return r

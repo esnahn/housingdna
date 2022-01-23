@@ -1,4 +1,5 @@
 #! python3
+# type: ignore
 
 # can't do relative import
 import sys
@@ -9,39 +10,58 @@ ext_path = this_path.parents[3]
 sys.path.append(str(ext_path.parent))  # parent of the extension dir
 
 # can't import pyrevit from cpython. yet.
-# from pyrevit import forms
-
-import clr
-
-clr.AddReference("RevitAPI")
-clr.AddReference("RevitAPIUI")
-clr.AddReference("AdWindows")
-clr.AddReference("UIFramework")
-clr.AddReference("UIFrameworkServices")
-
-from Autodesk.Revit import DB  # type: ignore
-from Autodesk.Revit.UI import UIApplication  # type: ignore
-
-__revit__: UIApplication
-assert __revit__  # type: ignore
-assert isinstance(__revit__, UIApplication)
 
 from housingdna.revitapi import (
-    get_all_by_class,
     get_element,
-    get_id,
-    get_parameter_value,
-    get_revit_doc,
-    get_all_by_category,
     get_name,
+    get_unbounded_height,
     pick_phase_by_views,
+    get_boundaries,
+    get_from_to_rooms,
+    get_id,
+    get_all_by_category,
+    get_parameter_value,
+    get_transparency,
 )
+from Autodesk.Revit import DB  # type: ignore
 
-doc = get_revit_doc(__revit__)
-phase_id = pick_phase_by_views(doc)
-phase = get_element(doc, phase_id)
+uidoc = __revit__.ActiveUIDocument
+doc = uidoc.Document
 
-clr_doors = get_all_by_category(doc, DB.BuiltInCategory.OST_Doors)
-# print(clr_doors[2].FromRoom(phase))  # not callable
-# print(clr_doors[2].FromRoom[phase])  # not subscriptable
-print(clr_doors[2].get_FromRoom(phase))
+# print(get_name(857279, doc))
+# print(get_unbounded_height(857279, doc))
+# print(phase := pick_phase_by_views(doc))
+# print(get_name(phase, doc))
+# print(get_boundaries(857279, phase, doc))
+# print(get_from_to_rooms(906937, phase, doc))
+
+
+def info(obj):
+    try:
+        print(obj, type(obj), dir(obj))
+    except:
+        print("pass")
+
+
+# elem = get_element(408757, doc)  # k apt
+# elem = get_element(485432, doc)  # sample
+elem = get_element(423107, doc)  # sample entrance door
+print(elem.Category.Id)
+print(DB.Category.GetCategory(doc, DB.BuiltInCategory.OST_Doors).Id)
+print(get_transparency(elem, doc))
+
+
+print(elem.Symbol.FamilyName)
+ids = elem.Symbol.GetMaterialIds(False)  # returnPaintMaterials
+print(elem.Symbol.GetMaterialIds(True))  # empty
+
+for id_ in ids:
+    print(get_element(id_, doc).get_Name())
+    print(get_element(id_, doc).Transparency)
+    print(elem.GetMaterialArea(id_, False))
+    # print(elem.GetMaterialVolume(id_))
+
+# print(get_id(elem.Symbol))
+# print(get_id(elem.GetTypeId()))
+
+print("done")
