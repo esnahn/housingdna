@@ -8,9 +8,11 @@ from typing import (
     Any,
     Dict,
     Iterable,
+    Iterator,
     List,
     Literal,
     Optional,
+    Protocol,
     Set,
     Tuple,
     Union,
@@ -335,17 +337,32 @@ class House:
         return obj if isinstance(obj, cls) else None
 
 
-### JSON
+# type of a dataclass
+# https://stackoverflow.com/questions/54668000/type-hint-for-an-instance-of-a-non-specific-dataclass
+class IsDataclass(Protocol):
+    # dataclasses._FIELDS
+    __dataclass_fields__: Dict[str, Any]
 
 
-def is_dataclass_instance(obj: Any):
+E = Union[str, int, float, Enum]
+
+# nested dict
+ND = Union[List[Any], Tuple[Any, ...], Dict[E, Any], E]
+
+# nested dataclass
+DC = Union[IsDataclass, ND]
+
+
+def is_dataclass_instance(obj: DC) -> bool:
     """Returns True if a class is an instance of a dataclass (and not a
     dataclass itself)
+
+    same as dataclasses._is_dataclass_instance()
     """
-    return dataclasses.is_dataclass(obj) and not isinstance(obj, type)
+    return hasattr(type(obj), "__dataclass_fields__")
 
 
-def as_nested_dict(obj):
+def as_nested_dict(obj: DC):
     """Converts dataclasses to dicts in a nested data object.
 
     Accept an object consisting of dataclasses, lists, tuples, and dicts, and
@@ -362,23 +379,25 @@ def as_nested_dict(obj):
     of `str(obj)`.
     """
     if is_dataclass_instance(obj):
-        result = []
+        result_list: List[Tuple[str, DC]] = []
         for f in dataclasses.fields(obj):
-            value = as_nested_dict(getattr(obj, f.name))  # recursive
-            result.append((f.name, value))
+            # recursive
+            value: DC = as_nested_dict(getattr(obj, f.name))  # type: ignore
+            result_list.append((f.name, value))
 
-        result.append(("__dataclass__", obj.__class__.__name__))
-        return dict(result)
+        result_list.append(("__dataclass__", obj.__class__.__name__))
+        return dict(result_list)
 
     elif isinstance(obj, Iterable):
-        iter = (as_nested_dict(e) for e in obj)
+        if isinstance(obj, dict):
+            result_dict: Dict[E, ND] = {key: as_nested_dict(obj[key]) for key in obj}
+            return result_dict
 
+        iter: Iterator[ND] = (as_nested_dict(e) for e in obj)
         if isinstance(obj, list):
             return list(iter)
-        if isinstance(obj, tuple):
+        elif isinstance(obj, tuple):
             return tuple(iter)
-        if isinstance(obj, dict):
-            return {key: as_nested_dict(obj[key]) for key in obj}
 
     elif isinstance(obj, Enum):
         # https://stackoverflow.com/a/24482806
@@ -387,15 +406,15 @@ def as_nested_dict(obj):
 
 
 class DataclassJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: IsDataclass):
         if is_dataclass_instance(o):
             return as_nested_dict(o)
         else:
-            print(type(o))
+            raise TypeError(type(o))
         return super().default(o)
 
 
-def to_nested_dataclass(obj):
+def to_nested_dataclass(obj: ND):
     """Converts special dicts back to dataclasses in a nested data object.
 
     Accept an object consisting of dicts, lists, tuples, and
@@ -413,22 +432,27 @@ def to_nested_dataclass(obj):
     """
 
     if isinstance(obj, dict):
-        if class_ := obj.pop("__dataclass__", None):
-            result = []
+        class_: str = obj.pop("__dataclass__", None)  # type: ignore
+        if class_:
+            result_list: List[Tuple[E, DC]] = []
             for key in obj:
-                value = to_nested_dataclass(obj[key])  # recursive
-                result.append((key, value))
-            return globals()[class_](**dict(result))
+                # recursive
+                value: DC = to_nested_dataclass(obj[key])  # type: ignore
+                result_list.append((key, value))
+            return globals()[class_](**dict(result_list))
         elif "__enum__" in obj:
             # https://stackoverflow.com/a/24482806
-            name, member = obj["__enum__"].split(".")
+            repr: str = obj["__enum__"]  # type: ignore
+            name, member = repr.split(".")
             if issubclass(class_ := globals()[name], Enum):
                 return getattr(class_, member)
         else:
-            return {key: to_nested_dataclass(obj[key]) for key in obj}
-
+            return_dict: Dict[E, DC] = {
+                key: to_nested_dataclass(obj[key]) for key in obj
+            }
+            return return_dict
     elif isinstance(obj, Iterable):
-        iter = (to_nested_dataclass(e) for e in obj)
+        iter: Iterator[DC] = (to_nested_dataclass(e) for e in obj)
 
         if isinstance(obj, list) or isinstance(obj, tuple):
             return tuple(iter)
