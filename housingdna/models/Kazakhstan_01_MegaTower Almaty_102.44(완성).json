@@ -1,0 +1,340 @@
+{
+    "rooms": [
+        {
+            "element_id": 383391,
+            "name": "주방 5",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383394,
+            "name": "거실 6",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383400,
+            "name": "현관 8",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383403,
+            "name": "안방 9",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383409,
+            "name": "화장실 11",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383406,
+            "name": "침실 10",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383412,
+            "name": "화장실 12",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383415,
+            "name": "발코니 13",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        },
+        {
+            "element_id": 383418,
+            "name": "발코니 14",
+            "height": {
+                "mm": 2438.4,
+                "__dataclass__": "Length"
+            },
+            "__dataclass__": "Room"
+        }
+    ],
+    "room_connections": [
+        {
+            "a_id": 383400,
+            "b_id": 383409,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383400,
+            "b_id": 383412,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383400,
+            "b_id": 383403,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383400,
+            "b_id": 383406,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383394,
+            "b_id": 383415,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383391,
+            "b_id": 383418,
+            "type_": {
+                "__enum__": "RevitObject.DOOR"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383394,
+            "b_id": 383400,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383391,
+            "b_id": 383394,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        },
+        {
+            "a_id": 383391,
+            "b_id": 383400,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "__dataclass__": "RoomConnection"
+        }
+    ],
+    "glazings": [
+        {
+            "element_id": 382767,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "outmost": false,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 385879,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": false,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 383246,
+            "type_": {
+                "__enum__": "RevitObject.ROOM_SEPARATION_LINE"
+            },
+            "outmost": false,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 385049,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 385158,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 389291,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": true,
+            "__dataclass__": "Glazing"
+        },
+        {
+            "element_id": 385742,
+            "type_": {
+                "__enum__": "RevitObject.WINDOW"
+            },
+            "outmost": false,
+            "__dataclass__": "Glazing"
+        }
+    ],
+    "room_glazing_relations": [
+        {
+            "room_id": 383406,
+            "glazing_id": 385049,
+            "facings": [
+                {
+                    "__enum__": "Direction.EAST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383403,
+            "glazing_id": 385158,
+            "facings": [
+                {
+                    "__enum__": "Direction.EAST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383394,
+            "glazing_id": 385742,
+            "facings": [
+                {
+                    "__enum__": "Direction.EAST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383415,
+            "glazing_id": 385742,
+            "facings": [
+                {
+                    "__enum__": "Direction.WEST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383418,
+            "glazing_id": 385879,
+            "facings": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383391,
+            "glazing_id": 385879,
+            "facings": [
+                {
+                    "__enum__": "Direction.NORTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383394,
+            "glazing_id": 389291,
+            "facings": [
+                {
+                    "__enum__": "Direction.NORTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383400,
+            "glazing_id": 382767,
+            "facings": [
+                {
+                    "__enum__": "Direction.NORTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383394,
+            "glazing_id": 382767,
+            "facings": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383391,
+            "glazing_id": 382767,
+            "facings": [
+                {
+                    "__enum__": "Direction.SOUTH"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383394,
+            "glazing_id": 383246,
+            "facings": [
+                {
+                    "__enum__": "Direction.WEST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        },
+        {
+            "room_id": 383391,
+            "glazing_id": 383246,
+            "facings": [
+                {
+                    "__enum__": "Direction.EAST"
+                }
+            ],
+            "__dataclass__": "RoomGlazingRelation"
+        }
+    ],
+    "__dataclass__": "House"
+}
