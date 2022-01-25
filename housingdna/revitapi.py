@@ -511,7 +511,6 @@ def get_revit_info(uiapp: UIApplication) -> RevitInfo:
     r.names = {elem: get_name(elem, doc) for elem in r.rooms}
     r.heights = {elem: get_unbounded_height(elem, doc) for elem in r.rooms}
     r.transparencies = {elem: get_transparency(elem, doc) for elem in r.doors}
-    print("wait...")
     r.boundary_segments = {
         elem: set(segs)
         for elem in r.rooms
