@@ -5,16 +5,16 @@ from ..model import House
 from .type import N
 from .name import is_ancillary, is_bedroom, is_entrance, is_corridor, is_public
 from .attribute import is_mbr
-import networkx as nx  # type: ignore
+import networkx as nx
 
 
 def dnas_room_network(
     model: House,
 ) -> List[N]:
     # room network
-    G: nx.Graph = nx.Graph()  # type: ignore
-    G.add_nodes_from(room.element_id for room in model.rooms)  # type: ignore
-    G.add_edges_from((conn.a_id, conn.b_id) for conn in model.room_connections)  # type: ignore
+    G: nx.Graph = nx.Graph()
+    G.add_nodes_from(room.element_id for room in model.rooms)
+    G.add_edges_from((conn.a_id, conn.b_id) for conn in model.room_connections)
 
     rooms = [room.element_id for room in model.rooms]
     pub_list = [room.element_id for room in model.rooms if is_public(room)]
@@ -60,28 +60,30 @@ def dna36_pub_priv_gradient(
     pub_PDs: List[int] = [nx.shortest_path_length(G, ent_room, room) for room in pub_list]  # type: ignore
     bed_PDs: List[int] = [nx.shortest_path_length(G, ent_room, room) for room in bed_list]  # type: ignore
 
-    if min(pub_PDs) < max(bed_PDs):  # type: ignore
+    if min(pub_PDs) < max(bed_PDs):
         return pub_list + bed_list
     else:
         return []
 
 
 def dna38_direct_connection(G_orig: nx.Graph, corr_list: List[int]) -> bool:
-    G = G_orig.copy()  # type: ignore
-    G.remove_nodes_from(corr_list)  # type: ignore
+    G: nx.Graph = G_orig.copy()
+    G.remove_nodes_from(corr_list)
 
-    n_components = nx.number_connected_components(G)  # type: ignore
+    n_components: int = nx.number_connected_components(G)
     return True if n_components == 1 else False
 
 
 def dna41_central_public(
     G: nx.Graph, rooms: List[int], pub_list: List[int]
 ) -> List[int]:
-    pub_clo: List[Tuple[int, float]] = [(room, nx.closeness_centrality(G, room)) for room in pub_list]  # type: ignore
-    max_other_clo: float = max(  # type: ignore
+    pub_clo: List[Tuple[int, float]] = [  # type: ignore
+        (room, nx.closeness_centrality(G, room)) for room in pub_list
+    ]
+    max_other_clo: float = max(
         [
-            nx.closeness_centrality(G, room) for room in rooms if room not in pub_list  # type: ignore
-        ]
+            nx.closeness_centrality(G, room) for room in rooms if room not in pub_list
+        ]  # type: ignore
     )
     return [room for room, clo in pub_clo if clo > max_other_clo]
 
