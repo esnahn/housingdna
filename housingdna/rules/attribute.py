@@ -1,8 +1,16 @@
-from typing import List, Mapping, Sequence
+from typing import Dict, List, Mapping, Sequence, Set
 from .type import N
 
 import numpy as np
-from ..model import House, Room
+from ..model import (
+    Direction,
+    Glazing,
+    House,
+    RevitObject,
+    Room,
+    RoomGlazingRelation,
+    multiple_sides,
+)
 from .name import is_main, judge_by_name
 
 
@@ -14,9 +22,14 @@ def dnas_attribute(
 
     room_heights = {room.element_id: room.height.mm for room in model.rooms}
 
+    outmost_list = [g.element_id for g in model.glazings if g.outmost]
+
     dna: List[N] = []
     for key, eval in [
         ("dna56", dna56_higher_main(room_heights, main_list)),
+        ("dna62", dna62_windows_on_two_sides(model.room_glazing_relations)),
+        ("dna65", dna65_window_to_outdoor(model.room_glazing_relations, outmost_list)),
+        ("dna69", dna69_window_interior(model.glazings, model.room_glazing_relations)),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -37,3 +50,37 @@ def dna56_higher_main(
     main_heights = {room: heights[room] for room in main_list}
     main_median: float = float(np.median(list(main_heights.values())))
     return [room for room, height in main_heights.items() if height > main_median]
+
+
+def dna62_windows_on_two_sides(rels: Sequence[RoomGlazingRelation]) -> List[int]:
+    room_facings: Dict[int, Set[Direction]] = dict()
+    for rel in rels:
+        room_facings.setdefault(rel.room_id, set()).update(rel.facings)
+    return [room for room, facings in room_facings.items() if multiple_sides(facings)]
+
+
+def dna65_window_to_outdoor(
+    rels: Sequence[RoomGlazingRelation], outmost_list: List[int]
+) -> List[int]:
+    return [rel.room_id for rel in rels if rel.glazing_id in outmost_list]
+
+
+def dna69_window_interior(
+    glazings: Sequence[Glazing], rels: Sequence[RoomGlazingRelation]
+) -> List[int]:
+    # windows, curtain walls, and glass doors
+    # between rooms (not at the outmost boundary of the house)
+    # excluding imaginary separation lines
+    inner_window_list = [
+        g.element_id
+        for g in glazings
+        if (not g.outmost) and g.type_ != RevitObject.ROOM_SEPARATION_LINE
+    ]
+    window_facings: Dict[int, Set[Direction]] = dict()
+    for rel in rels:
+        if rel.glazing_id in inner_window_list:
+            window_facings.setdefault(rel.glazing_id, set()).update(rel.facings)
+    real_inner_window_list = [
+        window for window, facings in window_facings.items() if multiple_sides(facings)
+    ]
+    return [rel.room_id for rel in rels if rel.glazing_id in real_inner_window_list]
