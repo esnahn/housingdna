@@ -230,6 +230,9 @@ def get_model(r: RevitInfo) -> House:
             element_id=id_,
             type_=object_type,
             outmost=(count_rooms(id_) == 1),
+            # TODO: in case of walls/lines,
+            # if all touching rooms are on the same side,
+            # it is outmost even though there are multiple rooms touching it.
         )
         for id_list, object_type in [
             (r.windows, RevitObject.WINDOW),
