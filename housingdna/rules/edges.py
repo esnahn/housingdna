@@ -352,3 +352,19 @@ all_possible_edges: List[E] = [
     ("dna66", "dna61"),
     ("dna68", "dna61"),
 ]
+
+# temporarily, connect opposite dnas same as their originals.
+# TODO: they should not be connected same.
+temp_edges: List[E] = [
+    ("dna38-1", "dna63"),
+    ("dna38-1", "dna69"),
+    ("dna1", "dna41-1"),
+    ("dna4", "dna38-1"),
+    ("dna7", "dna41-1"),
+    ("dna36", "dna38-1"),
+    ("dna36", "dna41-1"),
+    ("dna40", "dna41-1"),
+    ("dna41", "dna38-1"),
+    ("dna43", "dna38-1"),
+]
+all_possible_edges = list(set(all_possible_edges) | set(temp_edges))
