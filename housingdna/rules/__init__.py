@@ -42,7 +42,10 @@ def analyze_housing_dna(
     )
     nodes: List[Tuple[N, A]] = [(n, {"name": node_names[n]}) for n in node_ids]
     edges: List[Tuple[E, A]] = [
-        ((a, b), {}) for a, b in all_possible_edges if a in node_ids and b in node_ids
+        # TODO : gray 연결을 고려해야 함. 연결 원칙 적용 필요
+        ((a, b), {})
+        for a, b in all_possible_edges
+        if a in node_ids and b in node_ids
     ]
     return nodes, edges
 

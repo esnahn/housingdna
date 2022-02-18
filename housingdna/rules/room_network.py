@@ -71,6 +71,7 @@ def dna38_direct_connection(G_orig: nx.Graph, corr_list: List[int]) -> bool:
     G.remove_nodes_from(corr_list)
 
     n_components: int = nx.number_connected_components(G)
+    # TODO: 그레이에 대한 고려 필요. 예) dna38과 그레이로 연결되는 63_생활공간의 일부인 계단을 어떻게.....
     return True if n_components == 1 else False
 
 
