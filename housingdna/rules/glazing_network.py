@@ -55,8 +55,8 @@ def dnas_glazing_network(
             dna37_indoor_for_sunlight(sun_dict, main_list, indoor_ancill_list),
         ),
         (
-            "dna47",
-            dna47_bedroom_for_sunlight(sun_dict, bed_list),
+            "dna52",
+            dna52_bedroom_for_sunlight(sun_dict, bed_list),
         ),
     ]:
         if bool(eval) == True:
@@ -113,7 +113,7 @@ def dna37_indoor_for_sunlight(
         return []
 
 
-def dna47_bedroom_for_sunlight(
+def dna52_bedroom_for_sunlight(
     sun_dict: Mapping[int, int], bed_list: List[int]
 ) -> List[int]:
     sunlit_order: int = 3  # consider it sunlit if order is up to 3 steps
