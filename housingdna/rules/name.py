@@ -22,11 +22,11 @@ def dnas_room_name(
         ("dna33", dna33_main_entrance(ent_list)),
         ("dna34", dna34_ent_transition(ent_list)),
         ("dna42", ent_list),
-        ("dna48", kit_list),
-        ("dna49", dining_list),
-        ("dna50", bath_list),
-        ("dna51", sto_list),
-        ("dna53", dress_list),
+        ("dna46", kit_list),
+        ("dna47", dining_list),
+        ("dna48", bath_list),
+        ("dna49", sto_list),
+        ("dna51", dress_list),
     ]:
         if bool(eval) == True:
             dna.append(key)

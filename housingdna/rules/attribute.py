@@ -26,10 +26,10 @@ def dnas_attribute(
 
     dna: List[N] = []
     for key, eval in [
-        ("dna56", dna56_higher_main(room_heights, main_list)),
-        ("dna62", dna62_windows_on_two_sides(model.room_glazing_relations)),
-        ("dna65", dna65_window_to_outdoor(model.room_glazing_relations, outmost_list)),
-        ("dna69", dna69_window_interior(model.glazings, model.room_glazing_relations)),
+        ("dna55", dna55_higher_main(room_heights, main_list)),
+        ("dna61", dna61_windows_on_two_sides(model.room_glazing_relations)),
+        ("dna64", dna64_window_to_outdoor(model.room_glazing_relations, outmost_list)),
+        ("dna68", dna68_window_interior(model.glazings, model.room_glazing_relations)),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -42,7 +42,7 @@ def is_mbr(room: Room) -> bool:
     return judge_by_name(room.name, exact_list)
 
 
-def dna56_higher_main(
+def dna55_higher_main(
     heights: Mapping[int, float], main_list: Sequence[int]
 ) -> List[int]:
     """생활공간 중 다른 생활공간들보다 층고가 높은 (차이나는) 실이 있는지를 판단"""
@@ -52,20 +52,20 @@ def dna56_higher_main(
     return [room for room, height in main_heights.items() if height > main_median]
 
 
-def dna62_windows_on_two_sides(rels: Sequence[RoomGlazingRelation]) -> List[int]:
+def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation]) -> List[int]:
     room_facings: Dict[int, Set[Direction]] = dict()
     for rel in rels:
         room_facings.setdefault(rel.room_id, set()).update(rel.facings)
     return [room for room, facings in room_facings.items() if multiple_sides(facings)]
 
 
-def dna65_window_to_outdoor(
+def dna64_window_to_outdoor(
     rels: Sequence[RoomGlazingRelation], outmost_list: List[int]
 ) -> List[int]:
     return [rel.room_id for rel in rels if rel.glazing_id in outmost_list]
 
 
-def dna69_window_interior(
+def dna68_window_interior(
     glazings: Sequence[Glazing], rels: Sequence[RoomGlazingRelation]
 ) -> List[int]:
     # windows, curtain walls, and glass doors

@@ -29,8 +29,8 @@ def dnas_room_network(
         ("dna36", dna36_pub_priv_gradient(G, pub_list, bed_list, ent_list)),
         ("dna38", dna38_direct_connection(G, corr_list)),
         ("dna41", dna41_central_public(G, rooms, pub_list)),
-        ("dna45", dna45_couples_realm(G, mbr_list, ancill_list)),
-        ("dna46", dna46_childrens_realm(G, bed_list, mbr_list, ancill_list)),
+        ("dna44", dna44_couples_realm(G, mbr_list, ancill_list)),
+        ("dna45", dna45_childrens_realm(G, bed_list, mbr_list, ancill_list)),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -89,7 +89,7 @@ def dna41_central_public(
     return [room for room, clo in pub_clo if clo > max_other_clo]
 
 
-def dna45_couples_realm(
+def dna44_couples_realm(
     G: nx.Graph,
     mbr_list: List[int],
     ancill_list: List[int],
@@ -99,7 +99,7 @@ def dna45_couples_realm(
     return mbr_list
 
 
-def dna46_childrens_realm(
+def dna45_childrens_realm(
     G: nx.Graph,
     bed_list: List[int],
     mbr_list: List[int],
