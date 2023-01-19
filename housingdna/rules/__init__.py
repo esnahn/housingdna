@@ -27,6 +27,9 @@ from .name import dnas_room_name
 from .attribute import dnas_attribute
 from .room_network import dnas_room_network
 from .glazing_network import dnas_glazing_network
+# TODO: 추후 상위명(complex_test) 결정 후 수정하기
+# NEW ADD START
+from .test_complex import dnas_complex
 
 
 def analyze_housing_dna(
@@ -39,6 +42,8 @@ def analyze_housing_dna(
             dnas_attribute(model),
             dnas_room_network(model),
             dnas_glazing_network(model),
+            dnas_complex(model)
+
         )
     )
 
