@@ -1,6 +1,7 @@
 if __name__ == "__main__" and __package__ is None:
     # set relative import path
-    import sys, pathlib
+    import sys
+    import pathlib
 
     dir_level = 2
 
@@ -21,7 +22,7 @@ from typing import List, Tuple
 from ..model import House
 from .type import N, E, A
 from .nodes import node_names
-from .edges import all_possible_edges
+from .edges import white_edges
 from .name import dnas_room_name
 from .attribute import dnas_attribute
 from .room_network import dnas_room_network
@@ -40,11 +41,17 @@ def analyze_housing_dna(
             dnas_glazing_network(model),
         )
     )
+
+    # 그레이 엣지 중 연결된 모델을 불러오기
+    # 그레이 엣지 모델 따로 만들기
+
     nodes: List[Tuple[N, A]] = [(n, {"name": node_names[n]}) for n in node_ids]
+    # 아래 edges는 white_edges 로 변경
+    # edges는 white_edges + gray_edges
     edges: List[Tuple[E, A]] = [
         # TODO : gray 연결을 고려해야 함. 연결 원칙 적용 필요
         ((a, b), {})
-        for a, b in all_possible_edges
+        for a, b in white_edges
         if a in node_ids and b in node_ids
     ]
     return nodes, edges
