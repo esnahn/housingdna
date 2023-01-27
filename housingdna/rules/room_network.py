@@ -20,7 +20,8 @@ def dnas_room_network(
     pub_list = [room.element_id for room in model.rooms if is_public(room)]
     bed_list = [room.element_id for room in model.rooms if is_bedroom(room)]
     mbr_list = [room.element_id for room in model.rooms if is_mbr(room)]
-    ancill_list = [room.element_id for room in model.rooms if is_ancillary(room)]
+    ancill_list = [
+        room.element_id for room in model.rooms if is_ancillary(room)]
     ent_list = [room.element_id for room in model.rooms if is_entrance(room)]
     corr_list = [room.element_id for room in model.rooms if is_corridor(room)]
 
@@ -57,8 +58,10 @@ def dna36_pub_priv_gradient(
         # TODO: better handling for houses with no entrance room???
         return None
 
-    pub_PDs: List[int] = [nx.shortest_path_length(G, ent_room, room) for room in pub_list]  # type: ignore
-    bed_PDs: List[int] = [nx.shortest_path_length(G, ent_room, room) for room in bed_list]  # type: ignore
+    pub_PDs: List[int] = [nx.shortest_path_length(
+        G, ent_room, room) for room in pub_list]  # type: ignore
+    bed_PDs: List[int] = [nx.shortest_path_length(
+        G, ent_room, room) for room in bed_list]  # type: ignore
 
     if min(pub_PDs) < max(bed_PDs):
         return pub_list + bed_list
