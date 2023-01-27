@@ -108,6 +108,7 @@ def dna43_fun_corr(
 # print(dnas_complex(test_model))
 
 # 40. 북쪽 면의 부족한 채광을 고려한 계획
+# TODO: ????????
 def dna40_northface(
     model: House,
 ) -> List[N]:
