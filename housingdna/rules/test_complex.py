@@ -138,3 +138,7 @@ print(dna40_northface(test_model))
 
 # if bool(northface_1) == False or bool(northface_2 or northface_3) == True:
 #     return True
+
+
+# 39_명암의 대비가 강조되는 공간계획
+# TODO: code
