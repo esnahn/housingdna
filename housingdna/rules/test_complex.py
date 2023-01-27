@@ -107,7 +107,7 @@ def dna43_fun_corr(
 # print(dna43_fun_corr(test_model))
 # print(dnas_complex(test_model))
 
-
+# 40. 북쪽 면의 부족한 채광을 고려한 계획
 def dna40_northface(
     model: House,
 ) -> List[N]:
@@ -138,3 +138,7 @@ print(dna40_northface(test_model))
 
 # if bool(northface_1) == False or bool(northface_2 or northface_3) == True:
 #     return True
+
+
+# 39_명암의 대비가 강조되는 공간계획
+# TODO: code
