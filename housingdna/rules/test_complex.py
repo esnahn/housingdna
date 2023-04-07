@@ -130,9 +130,9 @@ def dna40_northface(
                    for rel in model.room_glazing_relations
                    if rel.room_id in main_list and rel.facings in sun_directions <= sunlit_order]
 
-    # if bool(northface_1 or northface_2) == True:
-    # return northface_1, northface_2
-    return northface_1, northface_2
+    if bool(northface_1 or northface_2) == True:
+        # return northface_1, northface_2
+        return northface_1, northface_2
 
 
 print(dna40_northface(test_model))
