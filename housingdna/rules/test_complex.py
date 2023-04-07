@@ -87,25 +87,30 @@ def dna43_fun_corr(
     model: House,
 ) -> List[N]:
     # room-glazing network
-    conn_types = [RevitObject.ROOM_SEPARATION_LINE,
-                  RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
+    conn_types_open = [RevitObject.ROOM_SEPARATION_LINE]
+    conn_types_win = [RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
     glazing_types = [(gla.element_id)
-                     for gla in test_model.glazings if gla.type_ in conn_types]
+                     for gla in test_model.glazings if gla.type_ in conn_types_win]
+    # 외기에 면한 창 리스트
+    outmost_list = [g.element_id for g in test_model.glazings if g.outmost]
+    # 외기에 면한 방 리스트
+    outmost_room = [(out.room_id)
+                    for out in model.room_glazing_relations if out.room_id in rooms and out.glazing_id in outmost_list]
+
     # 1. 복도가 없을 때
     fun_corr1 = [room for room in corr_list]
-    # 2. 복도가 있을 때, 복도와 연결된 다른 공간이 오픈되어 있는 경우
+    # 2. 복도가 있을 때, 복도와 연결된 다른 공간이 오픈되어 있는 경우. but 현관과 복도 오픈 연결은 제외
     fun_corr2 = [
-        (conn.a_id, conn.type_) for conn in test_model.room_connections if conn.a_id in corr_list and conn.type_ in conn_types] + [
-        (conn.b_id, conn.type_) for conn in test_model.room_connections if conn.b_id in corr_list and conn.type_ in conn_types]
-    # 3. 복도가 있을 때, 복도에 창이 있는 경우
-    fun_corr3 = [(rel.room_id, rel.glazing_id)
-                 for rel in model.room_glazing_relations
-                 if rel.room_id in corr_list and rel.glazing_id in glazing_types]
+        (conn.a_id, conn.type_) for conn in test_model.room_connections if conn.a_id in corr_list and conn.type_ in conn_types_open and not ancill_list] + [
+        (conn.b_id, conn.type_) for conn in test_model.room_connections if conn.b_id in corr_list and conn.type_ in conn_types_open and not ancill_list]
+    # 3. 복도가 있을 때, 복도에 외기로의 창이 있는 경우. 외기에 면한 창만을 어떻게 설정????
+    fun_corr3 = [rel for rel in outmost_room if rel in corr_list]
+
+    # return fun_corr1, fun_corr2, fun_corr3, outmost_room
+
     if bool(fun_corr1) == False or bool(fun_corr2 or fun_corr3) == True:
         return True
 
-
-# print(dna43_fun_corr(test_model))
 
 # 40. 북쪽 면의 부족한 채광을 고려한 계획
 # TODO: ????????
