@@ -7,14 +7,16 @@ def dnas_room_name(
     model: House,
 ) -> List[N]:
 
-    semi_out_list = [room.element_id for room in model.rooms if is_semi_outdoor(room)]
+    semi_out_list = [
+        room.element_id for room in model.rooms if is_semi_outdoor(room)]
     ent_list = [room.element_id for room in model.rooms if is_entrance(room)]
     # living_list = [room.element_id for room in model.rooms if is_living(room)]
     dining_list = [room.element_id for room in model.rooms if is_dining(room)]
     kit_list = [room.element_id for room in model.rooms if is_kitchen(room)]
     bath_list = [room.element_id for room in model.rooms if is_bathroom(room)]
     sto_list = [room.element_id for room in model.rooms if is_storage(room)]
-    dress_list = [room.element_id for room in model.rooms if is_dressroom(room)]
+    dress_list = [
+        room.element_id for room in model.rooms if is_dressroom(room)]
 
     dna: List[N] = []
     for key, eval in [
@@ -41,7 +43,8 @@ def judge_by_name(
     exclude_partial: List[str] = [],
 ) -> bool:
     name = name.rstrip("1234567890")  # remove room number
-    name = name.strip(r" .,;'`-=&()[]{}")  # remove spaces and other punctuations
+    # remove spaces and other punctuations
+    name = name.strip(r" .,;'`-=&()[]{}")
 
     # use a casefolded copy of the string.
     # The casefolding algorithm is described in section 3.13 of the Unicode Standard.
@@ -165,6 +168,7 @@ def is_ancillary(room: Room) -> bool:
         or is_storage(room)
         or is_entrance(room)
         or is_semi_outdoor(room)
+        or is_exemption(room)
     )
 
 
@@ -229,6 +233,14 @@ def is_semi_outdoor(room: Room) -> bool:
         "porch",
         "sunroom",
         "sun room",
+    ]
+    return judge_by_name(room.name, partial_list=partial_list)
+
+
+# 분석에 제외되어야 할 방
+def is_exemption(room: Room) -> bool:
+    partial_list = [
+        "no-name",
     ]
     return judge_by_name(room.name, partial_list=partial_list)
 
