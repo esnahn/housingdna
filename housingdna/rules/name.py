@@ -168,12 +168,11 @@ def is_ancillary(room: Room) -> bool:
         or is_storage(room)
         or is_entrance(room)
         or is_semi_outdoor(room)
-        or is_exemption(room)
     )
 
 
 def is_main(room: Room) -> bool:
-    return not is_ancillary(room)
+    return not is_ancillary(room) and not is_exemption(room)
 
 
 def is_bathroom(room: Room) -> bool:
