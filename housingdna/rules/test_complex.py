@@ -143,3 +143,19 @@ print(dna40_northface(test_model))
 
 # 39_명암의 대비가 강조되는 공간계획
 # TODO: code
+
+
+# 54_독립된 방
+def dna54_Independent_rooms(
+    model: House,
+) -> List[N]:
+    conn_types_door = [RevitObject.DOOR]
+    independent_rooms1 = [(conn.a_id, conn.type_)
+                          for conn in test_model.room_connections if conn.a_id in bed_list and conn.type_ in conn_types_door]
+    independent_rooms2 = [(conn.b_id, conn.type_)
+                          for conn in test_model.room_connections if conn.b_id in bed_list and conn.type_ in conn_types_door]
+
+    return set(independent_rooms1) - set(independent_rooms2)
+
+
+print(dna54_Independent_rooms(test_model))
