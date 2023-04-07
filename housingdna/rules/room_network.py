@@ -32,6 +32,7 @@ def dnas_room_network(
         ("dna41", dna41_central_public(G, rooms, pub_list)),
         ("dna44", dna44_couples_realm(G, mbr_list, ancill_list)),
         ("dna45", dna45_childrens_realm(G, bed_list, mbr_list, ancill_list)),
+        ("dna56", dna56_marriage_bed(G, mbr_list, ancill_list)),
     ]:
         if bool(eval) == True:
             dna.append(key)
