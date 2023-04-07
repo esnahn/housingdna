@@ -111,3 +111,13 @@ def dna45_childrens_realm(
     # TODO: should include ancillary rooms that "connected"
     # to children's bedrooms.
     return list(set(bed_list) - set(mbr_list))
+
+
+def dna56_marriage_bed(
+    G: nx.Graph,
+    mbr_list: List[int],
+    ancill_list: List[int],
+) -> List[int]:
+    # TODO: should include ancillary rooms that "connected"
+    # to the? one and only??? main bedroom.
+    return mbr_list
