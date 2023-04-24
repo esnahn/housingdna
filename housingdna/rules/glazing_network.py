@@ -10,6 +10,7 @@ from .name import (
     is_bedroom,
     is_main,
     is_semi_outdoor,
+    is_exemption
 )
 import networkx as nx
 
@@ -20,7 +21,8 @@ def dnas_glazing_network(
     # room-glazing network
     G: nx.DiGraph = nx.DiGraph()
     # assuming mid-latitude northern hemisphere
-    sun_directions = [Direction.SOUTH, Direction.SOUTHEAST, Direction.SOUTHWEST]
+    sun_directions = [Direction.SOUTH,
+                      Direction.SOUTHEAST, Direction.SOUTHWEST]
     opposite_directions = [d.opposite() for d in sun_directions]
     edges = [
         (rel.room_id, rel.glazing_id)
@@ -48,6 +50,13 @@ def dnas_glazing_network(
         for room in model.rooms
     }
 
+    # dna40_northface를 위한 코드
+    south = [(rel.room_id) for rel in model.room_glazing_relations if rel.room_id in main_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    north = [(rel.room_id)
+             for rel in model.room_glazing_relations if rel.room_id in indoor_ancill_list and any(
+        (facing in opposite_directions) for facing in rel.facings)]
+
     dna: List[N] = []
     for key, eval in [
         (
@@ -57,6 +66,10 @@ def dnas_glazing_network(
         (
             "dna52",
             dna52_bedroom_for_sunlight(sun_dict, bed_list),
+        ),
+        (
+            "dna40",
+            dna40_northface(sun_dict, indoor_ancill_list, south, north),
         ),
     ]:
         if bool(eval) == True:
@@ -80,7 +93,8 @@ def analyze_sun_order(
     min_order = max_order
     for glazing in outmost_list:
         try:
-            n: int = nx.shortest_path_length(sun_graph, room_id, glazing)  # type: ignore
+            n: int = nx.shortest_path_length(
+                sun_graph, room_id, glazing)  # type: ignore
             if n < min_order:
                 min_order = n
         except nx.NodeNotFound:
@@ -119,3 +133,18 @@ def dna52_bedroom_for_sunlight(
     sunlit_order: int = 3  # consider it sunlit if order is up to 3 steps
 
     return [room for room in bed_list if sun_dict[room] <= sunlit_order]
+
+
+# DONE: dna40_northface : 3번째 코딩 시도(코드 줄이기)... 성공!!
+def dna40_northface(sun_dict: Mapping[int, int],
+                    indoor_ancill_list: List[int],
+                    south: List[int],
+                    north: List[int],
+                    ) -> List[int]:
+
+    sunlit_order: int = 3  # consider it sunlit if order is up to 3 steps
+
+    # 1. 채광 필요가 공간들이 남쪽에
+    # 2. 채광 필요가 적은 공간이 북쪽에
+    return [room for room in south if sun_dict[room] <= sunlit_order] + [room for room in north if sun_dict[room] >
+                                                                         sunlit_order]+[room for room in indoor_ancill_list if room not in test_model.room_glazing_relations]
