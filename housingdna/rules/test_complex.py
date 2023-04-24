@@ -112,42 +112,6 @@ def dna43_fun_corr(
         return True
 
 
-# 40. 북쪽 면의 부족한 채광을 고려한 계획
-# TODO: ????????
-
-
-def dna40_northface(
-    model: House,
-) -> List[N]:
-    # room-glazing network
-    sun_directions = [Direction.SOUTH, Direction.EAST,
-                      Direction.SOUTHEAST, Direction.SOUTHWEST]
-    opposite_directions = [d.opposite() for d in sun_directions]
-    conn_types = [RevitObject.ROOM_SEPARATION_LINE,
-                  RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
-    sunlit_order: int = 3  # consider it sunlit if order is up to 3 steps
-    glazing_types = [(gla.element_id)
-                     for gla in test_model.glazings if gla.type_ in conn_types]
-    # 1. 채광 필요가 공간들이 남쪽에
-    northface_1 = [(rel.room_id, rel.facings)
-                   for rel in model.room_glazing_relations
-                   if rel.room_id in ancill_list and rel.facings in opposite_directions <= sunlit_order]
-    # 2. 채광 필요가 적은 공간이 북쪽에
-    northface_2 = [(rel.room_id, rel.facings)
-                   for rel in model.room_glazing_relations
-                   if rel.room_id in main_list and rel.facings in sun_directions <= sunlit_order]
-
-    if bool(northface_1 or northface_2) == True:
-        # return northface_1, northface_2
-        return northface_1, northface_2
-
-
-# print(dna40_northface(test_model))
-
-# if bool(northface_1) == False or bool(northface_2 or northface_3) == True:
-#     return True
-
-
 # 39_명암의 대비가 강조되는 공간계획
 # TODO: code
 
@@ -166,4 +130,4 @@ def dna54_Independent_rooms(
 
 
 # print(dna54_Independent_rooms(test_model))
-print(dnas_complex(test_model))
+# print(dnas_complex(test_model))
