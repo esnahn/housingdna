@@ -1,16 +1,15 @@
+# 시스템 다시 검토할 것 (model. ~~~)
 from typing import List, Mapping
 
 from ..model import (
     Direction,
-    House,
-)
+    House,)
 from .type import N
 from .name import (
     is_ancillary,
     is_bedroom,
     is_main,
     is_semi_outdoor,
-    is_exemption
 )
 import networkx as nx
 
@@ -147,4 +146,4 @@ def dna40_northface(sun_dict: Mapping[int, int],
     # 1. 채광 필요가 공간들이 남쪽에
     # 2. 채광 필요가 적은 공간이 북쪽에
     return [room for room in south if sun_dict[room] <= sunlit_order] + [room for room in north if sun_dict[room] >
-                                                                         sunlit_order]+[room for room in indoor_ancill_list if room not in test_model.room_glazing_relations]
+                                                                         sunlit_order]+[room for room in indoor_ancill_list if room not in House.room_glazing_relations]
