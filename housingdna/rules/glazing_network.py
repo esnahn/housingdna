@@ -1,8 +1,7 @@
-# 시스템 다시 검토할 것 (model. ~~~)
 from typing import List, Mapping
 
 from ..model import (
-    Direction,
+    Direction, RevitObject,
     House,)
 from .type import N
 from .name import (
@@ -56,6 +55,13 @@ def dnas_glazing_network(
              for rel in model.room_glazing_relations if rel.room_id in indoor_ancill_list and any(
         (facing in opposite_directions) for facing in rel.facings)]
 
+    # dna39_Light_dark_contrast를 위한 코드
+    conn_types_open = [RevitObject.ROOM_SEPARATION_LINE]
+    list_conn_values1 = [
+        sun_dict[conn.a_id] for conn in model.room_connections if conn.type_ in conn_types_open]
+    list_conn_values2 = [
+        sun_dict[conn.b_id] for conn in model.room_connections if conn.type_ in conn_types_open]
+
     dna: List[N] = []
     for key, eval in [
         (
@@ -69,6 +75,10 @@ def dnas_glazing_network(
         (
             "dna40",
             dna40_northface(sun_dict, indoor_ancill_list, south, north),
+        ),
+        (
+            "dna39",
+            dna39_Light_dark_contrast(list_conn_values1, list_conn_values2),
         ),
     ]:
         if bool(eval) == True:
@@ -147,3 +157,13 @@ def dna40_northface(sun_dict: Mapping[int, int],
     # 2. 채광 필요가 적은 공간이 북쪽에
     return [room for room in south if sun_dict[room] <= sunlit_order] + [room for room in north if sun_dict[room] >
                                                                          sunlit_order]+[room for room in indoor_ancill_list if room not in House.room_glazing_relations]
+
+# DONE: dna39_Light_dark_contrast: 성공!!
+
+
+def dna39_Light_dark_contrast(list_conn_values1: List[int],
+                              list_conn_values2: List[int],
+                              ) -> List[int]:
+    if list_conn_values1 != list_conn_values2:  # 오픈으로 연결된 방들의 채광정도의 차이가 있는 경우, True
+        return True
+    return False
