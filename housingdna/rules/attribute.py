@@ -61,11 +61,11 @@ def dna55_higher_main(
     return [room for room, height in main_heights.items() if height > main_median]
 
 
-def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation], semi_out_list: List[int]) -> List[int]:
+def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation], outmost_list: List[int]) -> List[int]:
     room_facings: Dict[int, Set[Direction]] = dict()
     for rel in rels:
         room_facings.setdefault(rel.room_id, set()).update(rel.facings)
-    return [room for room, facings in room_facings.items() if multiple_sides(facings) and not semi_out_list]
+    return [room for room, facings in room_facings.items() if multiple_sides(facings) and not outmost_list]
 
 
 def dna64_window_to_outdoor(
