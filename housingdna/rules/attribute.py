@@ -1,6 +1,7 @@
 from typing import Dict, List, Mapping, Sequence, Set
 from .type import N
 
+import housingdna.file as hdna
 import numpy as np
 from ..model import (
     Direction,
@@ -11,6 +12,9 @@ from ..model import (
     RoomGlazingRelation,
     multiple_sides,
 )
+from .name import (
+    is_main,
+    is_semi_outdoor,)
 from .name import is_main, judge_by_name
 
 
@@ -24,11 +28,16 @@ def dnas_attribute(
 
     outmost_list = [g.element_id for g in model.glazings if g.outmost]
 
+    semi_out_list = [
+        room.element_id for room in model.rooms if is_semi_outdoor(room)]
+
     dna: List[N] = []
     for key, eval in [
         ("dna55", dna55_higher_main(room_heights, main_list)),
-        ("dna61", dna61_windows_on_two_sides(model.room_glazing_relations)),
-        ("dna64", dna64_window_to_outdoor(model.room_glazing_relations, outmost_list)),
+        ("dna61", dna61_windows_on_two_sides(
+            model.room_glazing_relations, semi_out_list)),
+        ("dna64", dna64_window_to_outdoor(
+            model.room_glazing_relations, outmost_list)),
         ("dna68", dna68_window_interior(model.glazings, model.room_glazing_relations)),
     ]:
         if bool(eval) == True:
@@ -52,11 +61,11 @@ def dna55_higher_main(
     return [room for room, height in main_heights.items() if height > main_median]
 
 
-def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation]) -> List[int]:
+def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation], semi_out_list: List[int]) -> List[int]:
     room_facings: Dict[int, Set[Direction]] = dict()
     for rel in rels:
         room_facings.setdefault(rel.room_id, set()).update(rel.facings)
-    return [room for room, facings in room_facings.items() if multiple_sides(facings)]
+    return [room for room, facings in room_facings.items() if multiple_sides(facings) and not semi_out_list]
 
 
 def dna64_window_to_outdoor(
@@ -79,7 +88,8 @@ def dna68_window_interior(
     window_facings: Dict[int, Set[Direction]] = dict()
     for rel in rels:
         if rel.glazing_id in inner_window_list:
-            window_facings.setdefault(rel.glazing_id, set()).update(rel.facings)
+            window_facings.setdefault(
+                rel.glazing_id, set()).update(rel.facings)
     real_inner_window_list = [
         window for window, facings in window_facings.items() if multiple_sides(facings)
     ]
