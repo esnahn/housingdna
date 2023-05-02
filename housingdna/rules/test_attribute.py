@@ -201,7 +201,7 @@ room_win_count2 = {win.room_id: win.glazing_id
 
 # print(outmost_room)
 
-print(room_list)
+# print(room_list)
 # print(room_list2)
 
 # print(room_win)
@@ -217,16 +217,16 @@ def room_win_count(test_model: House,
     return Counter(room_list)
 
 
-print(room_win_count(test_model))
+# print(room_win_count(test_model))
 
 
-print(dnas_attribute(test_model))
-# print(dna55_higher_main(room_heights, main_list))
-print(dna61_windows_on_two_sides(test_model.room_glazing_relations, semi_out_list))
-# print(dna64_window_to_outdoor(test_model.room_glazing_relations, outmost_list))
-print(dna68_window_interior(test_model.glazings, test_model.room_glazing_relations))
-print(dna67_Windows_overlooking_Life(
-    test_model.glazings, test_model.room_glazing_relations))
+# print(dnas_attribute(test_model))
+# # print(dna55_higher_main(room_heights, main_list))
+# print(dna61_windows_on_two_sides(test_model.room_glazing_relations, semi_out_list))
+# # print(dna64_window_to_outdoor(test_model.room_glazing_relations, outmost_list))
+# print(dna68_window_interior(test_model.glazings, test_model.room_glazing_relations))
+# print(dna67_Windows_overlooking_Life(
+#     test_model.glazings, test_model.room_glazing_relations))
 
 # print(room_win)
 # print(room_win_count)

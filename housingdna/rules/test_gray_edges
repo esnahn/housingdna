@@ -16,7 +16,6 @@ if __name__ == "__main__" and __package__ is None:
             package_path += "."
     __package__ = package_path
 
-
 import networkx as nx
 import housingdna.file as hdna
 from itertools import chain
@@ -37,12 +36,12 @@ from .test_complex import dnas_complex
 #     "housingdna/models/Korea_01_위례자연앤셑트럴자이_98.79(완성).json"
 # )
 
-# test_model = hdna.get_model(
-#     "housingdna/models/Japan_01_Sato Kogyo Co._81.58(수정).json"
-# )
 test_model = hdna.get_model(
-    "housingdna/models/China_01_2013_119.37(완성)_test2.json"
+    "housingdna/models/Japan_01_Sato Kogyo Co._81.58(수정).json"
 )
+# test_model = hdna.get_model(
+#     "housingdna/models/China_01_2013_119.37(완성)_test2.json"
+# )
 # print(test_model)
 
 # 네트워크 만들기
@@ -84,7 +83,7 @@ node_ids_2: List[N] = list(
     )
 )
 
-print(node_ids_2)
+# print(node_ids_2)
 
 # 공간 분류 리스트 정리
 rooms = [room.element_id for room in test_model.rooms]
@@ -726,7 +725,7 @@ def dna47_dna29(model: House,) -> List[Tuple[E, A]]:
         return []
 
 
-# print(gray_edges_list(test_model))
+print(gray_edges_list(test_model))
 # print(edge_name_1_1(test_model))
 # print(edge_name_1_2(test_model))
 # print(edge_name_6(test_model))
