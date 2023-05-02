@@ -21,55 +21,41 @@ import networkx as nx
 import housingdna.file as hdna
 from itertools import chain
 from typing import List, Tuple
-from ..model import (House, RevitObject)
+from ..model import (House, RevitObject, Direction)
 from .type import N, E, A
 from .nodes import node_names
 from .edges import white_edges, gray_edges
-from .name import dna34_ent_transition, dna33_main_entrance, dnas_room_name, is_bedroom, is_kitchen, is_semi_outdoor, is_entrance, is_dining, is_bathroom, is_storage, is_dressroom, is_corridor, is_public, is_ancillary, is_living, is_semi_outdoor
-from .attribute import is_mbr, dnas_attribute
+from .name import dna34_ent_transition, dna33_main_entrance, is_main, dnas_room_name, is_bedroom, is_kitchen, is_semi_outdoor, is_entrance, is_dining, is_bathroom, is_storage, is_dressroom, is_corridor, is_public, is_ancillary, is_living, is_semi_outdoor
+from .test_attribute import is_mbr, dnas_attribute
 from .room_network import dnas_room_network, dna36_pub_priv_gradient, dna38_direct_connection, dna41_central_public, dna44_couples_realm, dna45_childrens_realm
 from .glazing_network import dnas_glazing_network, dna37_indoor_for_sunlight, dna52_bedroom_for_sunlight
 from .test_complex import dnas_complex
-from housingdna.rules import edges
 
 
 # 분석 대상 불러오기: revit file 명 ""에 추가할 것
+# test_model = hdna.get_model(
+#     "housingdna/models/Korea_01_위례자연앤셑트럴자이_98.79(완성).json"
+# )
+
+# test_model = hdna.get_model(
+#     "housingdna/models/Japan_01_Sato Kogyo Co._81.58(수정).json"
+# )
 test_model = hdna.get_model(
-    # "housingdna/models/Japan_01_Sato Kogyo Co._81.58(test).json"
-    "housingdna/models/Korea_01_위례자연앤셑트럴자이_98.79(완성).json"
+    "housingdna/models/China_01_2013_119.37(완성)_test2.json"
 )
 # print(test_model)
 
 # 네트워크 만들기
-G = nx.Graph()
-G.add_edges_from((conn.a_id, conn.b_id)
-                 for conn in test_model.room_connections)
-list(G.edges)
+# G = nx.Graph()
+# G.add_edges_from((conn.a_id, conn.b_id)
+#                  for conn in test_model.room_connections)
+# list(G.edges)
 
-list_edges = [G.edges]
+# list_edges = [G.edges]
 # print(list_edges)
 
 
-# 도출되는 노드 리스트
-def list_housing_nodes(
-    model: House,
-) -> List[Tuple[N, A]]:
-    node_ids: List[N] = list(
-        chain(
-            dnas_obviouss(model),
-            dnas_room_name(test_model),
-            dnas_attribute(test_model),
-            dnas_room_network(test_model),
-            dnas_glazing_network(test_model),
-        )
-    )
-
-    list_nodes: List[N] = [
-        (n, {"name": node_names[n]}) for n in node_ids]
-    return list_nodes
-
-
-def dnas_obviouss(model: House) -> List[N]:
+def dnas_obvious(model: House) -> List[N]:
     dna: List[N] = []
     for key, eval in [("dna1", dna1_is_house(model))]:
         if bool(eval) == True:
@@ -83,19 +69,13 @@ def dna1_is_house(model: House) -> List[int]:
     return [room.element_id for room in model.rooms]
 
 
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()
-
-
 # print(list_housing_nodes(test_model))
 
 
 # 도출되는 노드 리스트
 node_ids_2: List[N] = list(
     chain(
-        dnas_obviouss(test_model),
+        dnas_obvious(test_model),
         dnas_room_name(test_model),
         dnas_attribute(test_model),
         dnas_room_network(test_model),
@@ -104,7 +84,7 @@ node_ids_2: List[N] = list(
     )
 )
 
-# print(node_ids_2)
+print(node_ids_2)
 
 # 공간 분류 리스트 정리
 rooms = [room.element_id for room in test_model.rooms]
@@ -115,7 +95,7 @@ ancill_list = [
 semi_out_list = [
     room.element_id for room in test_model.rooms if is_semi_outdoor(room)]
 ent_list = [room.element_id for room in test_model.rooms if is_entrance(room)]
-# living_list = [room.element_id for room in model.rooms if is_living(room)]
+living_list = [room.element_id for room in test_model.rooms if is_living(room)]
 dining_list = [room.element_id for room in test_model.rooms if is_dining(room)]
 kit_list = [room.element_id for room in test_model.rooms if is_kitchen(room)]
 bath_list = [room.element_id for room in test_model.rooms if is_bathroom(room)]
@@ -125,366 +105,638 @@ dress_list = [
 corr_list = [room.element_id for room in test_model.rooms if is_corridor(room)]
 bed_list = [room.element_id for room in test_model.rooms if is_bedroom(room)]
 living_list = [room.element_id for room in test_model.rooms if is_living(room)]
-
+main_list = [room.element_id for room in test_model.rooms if is_main(room)]
+indoor_ancill_list = [
+    room.element_id
+    for room in test_model.rooms
+    if is_ancillary(room) and not is_semi_outdoor(room)
+]
+bedonly_list = list(set(bed_list) - set(mbr_list))
+sun_directions = [Direction.SOUTH, Direction.EAST,
+                  Direction.SOUTHEAST, Direction.SOUTHWEST]
+opposite_directions = [d.opposite() for d in sun_directions]
 # print(semi_out_list)
 
-# edge name 1_1
+# print(main_list)
+
+
+def gray_edges_list(
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            edge_name_1_1(test_model),
+            edge_name_1_2(test_model),
+            edge_name_2_1(test_model)
+        )
+    )
+    return node_ids
 
 
 def edge_name_1_1(
-        model: House, ) -> List[Tuple[E, A]]:
-    dna36_dna46: List[Tuple[E, A]] = [
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            dna36_dna46(test_model),
+            dna36_dna47(test_model),
+            dna36_dna48(test_model),
+            dna36_dna51(test_model),
+        )
+    )
+    return node_ids
+
+
+def edge_name_1_2(
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            dna40_dna41(test_model),
+            dna40_dna44(test_model),
+            dna40_dna45(test_model),
+            dna40_dna46(test_model),
+            dna40_dna47(test_model),
+            dna40_dna48(test_model),
+            dna40_dna49(test_model),
+            dna40_dna51(test_model),
+
+        )
+    )
+    return node_ids
+
+
+def edge_name_2_1(
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            dna42_dna48(test_model),
+            dna42_dna49(test_model),
+            dna46_dna48(test_model),
+            dna46_dna49(test_model),
+            dna51_dna48(test_model),
+        )
+    )
+    return node_ids
+
+
+def edge_name_2_2(
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            dna41_dna43(test_model),
+            dna41_dna46(test_model),
+            dna41_dna47(test_model),
+            dna44_dna48(test_model),
+            dna44_dna49(test_model),
+            dna44_dna51(test_model),
+            dna45_dna48(test_model),
+            dna45_dna49(test_model),
+            dna45_dna51(test_model),
+        )
+    )
+    return node_ids
+
+
+def edge_name_6(
+    model: House,
+) -> List[Tuple[N, A]]:
+    node_ids: List[N] = list(
+        chain(
+            dna44_dna29(test_model),
+            dna45_dna29(test_model),
+            dna46_dna29(test_model),
+            dna47_dna29(test_model),
+        )
+    )
+    return node_ids
+# edge name 1_1
+
+
+def dna36_dna46(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna36"
         for b in node_ids_2 if b in "dna46"]
-    dna36_dna47: List[Tuple[E, A]] = [
+    if bool(edge) == True:
+        return [("dna36", "dna46")]
+    else:
+        return []
+
+
+def dna36_dna47(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna36"
         for b in node_ids_2 if b in "dna47"]
-    dna36_dna48: List[Tuple[E, A]] = [
+    if bool(edge) == True:
+        return [("dna36", "dna47")]
+    else:
+        return []
+
+
+def dna36_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna36"
         for b in node_ids_2 if b in "dna48"]
-    dna36_dna51: List[Tuple[E, A]] = [
+    if bool(edge) == True:
+        return [("dna36", "dna48")]
+    else:
+        return []
+
+
+def dna36_dna51(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna36"
         for b in node_ids_2 if b in "dna51"]
-    return dna36_dna46, dna36_dna47, dna36_dna48, dna36_dna51
-
-
-# print(edge_name_1_1(test_model))
-
+    if bool(edge) == True:
+        return [("dna36", "dna51")]
+    else:
+        return []
 
 # edge name 1_2 채광 필요가 적은 공간과 채광이 중요한 공간으로 구분
-# 40→48,49,51 48.욕실,49.창고, 51.드레스룸 등이 주호의 북쪽에 배치된 경우
-# TODO: 창이 없는 경우의 정의 만들기
-
-# def edge_name_1_2(
-#     model: House, ) -> List[Tuple[E, A]]:
-#     conn_types = [RevitObject.ROOM_SEPARATION_LINE,
-#                   RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
-#     dna40_dna41_id = [(conn.a_id, conn.type_)
-#                       for conn in test_model.room_connections
-#                       if conn.a_id in living_list and conn.type_ in conn_types
-#                       ]+[(conn.b_id, conn.type_)
-#                          for conn in test_model.room_connections
-#                          if conn.b_id in living_list and conn.type_ in conn_types
-#                          ]
-#     dna40_dna41: List[Tuple[E, A]] = [
-#         ((a, b), {})
-#         for a in node_ids_2
-#         if a in "dna40"
-#         for b in node_ids_2 if b in "dna41"]
-#     dna41_dna46_id = [(conn.a_id, conn.b_id)
-#                       for conn in test_model.room_connections
-#                       if conn.a_id in living_list and conn.b_id in kit_list
-#                       ]+[(conn.a_id, conn.b_id)
-#                          for conn in test_model.room_connections
-#                          if conn.a_id in kit_list and conn.b_id in living_list
-#                          ]
-#     dna41_dna46: List[Tuple[E, A]] = [
-#         ((a, b), {})
-#         for a in node_ids_2
-#         if a in "dna41"
-#         for b in node_ids_2 if b in "dna46"]
-
-#     if bool(dna40_dna41_id and dna40_dna45_id and dna40_dna46_id and dna40_dna48_id and dna40_dna49_id and dna40_dna50_id and dna40_dna51_id and dna40_dna53_id) == True:
-#         return dna40_dna41, dna40_dna45, dna40_dna46, dna40_dna48, dna40_dna49, dna40_dna50, dna40_dna51, dna40_dna53
-
-#     return dna40_dna41, dna40_dna45, dna40_dna46, dna40_dna48, dna40_dna49, dna40_dna50, dna40_dna51, dna40_dna53
-
-# print(edge_name_1_2(test_model))
-
-# TODO : dna 정의를 통해 dna번호로 추출하는 방법............
-# def dnas(model: House):
-#     dna = [
-#         ("dna29", semi_out_list),
-#         ("dna33", dna33_main_entrance(ent_list)),
-#         ("dna34", dna34_ent_transition(ent_list)),
-#         ("dna42", ent_list),
-#         ("dna46", kit_list),
-#         ("dna47", dining_list),
-#         ("dna48", bath_list),
-#         ("dna49", sto_list),
-#         ("dna51", dress_list),
-#         ("dna36", dna36_pub_priv_gradient(
-#             G, pub_list, bed_list, ent_list)),
-#         ("dna38", dna38_direct_connection(G, corr_list)),
-#         ("dna41", dna41_central_public(G, rooms, pub_list)),
-#         ("dna44", dna44_couples_realm(G, mbr_list, ancill_list)),
-#         ("dna45", dna45_childrens_realm(
-#             G, bed_list, mbr_list, ancill_list)), ]
-
-#     for (key, eval) in dna:
-#         if bool(eval) == True:
-#             dna.append(key)
-#     return dna
 
 
-# print(dnas("407451"))
+def dna40_dna41(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna41"]
+    south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in main_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    if bool(edge) == True and bool(south) == True:
+        return [("dna40", "dna41")]
+    else:
+        return []
 
 
-# 포함 2-1: 단일공간인경우
-# 42,43,43.1,46,47,48,51→43(43.1),46,47,48,49,50,51
-# 일단 dna50 "알코브" 제외. TODO: 알코브 정의
-# to공간이 하나의 공간과만 연결되어있으며, 연결된 공간의 이름이 to공간과 같은 경우 연결
+def dna40_dna44(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna44"]
+    south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in mbr_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    if bool(edge) == True and bool(south) == True:
+        return [("dna40", "dna44")]
+    else:
+        return []
 
-def edge_name_2_1(model: House, ) -> List[Tuple[E, A]]:
-    dna42_dna48_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in bath_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in ent_list
-                         ]
-    dna42_dna48: List[Tuple[E, A]] = [
+
+def dna40_dna45(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna45"]
+    south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in bedonly_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    if bool(edge) == True and bool(south) == True:
+        return [("dna40", "dna45")]
+    else:
+        return []
+
+
+def dna40_dna46(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna46"]
+    south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in kit_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    if bool(edge and south) == True:
+        return [("dna40", "dna46")]
+    else:
+        return []
+
+
+def dna40_dna47(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna47"]
+    south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in dining_list and any(
+        (facing in sun_directions) for facing in rel.facings)]
+    if bool(edge and south) == True:
+        return [("dna40", "dna47")]
+    else:
+        return []
+
+
+def dna40_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna48"]
+    north = [(rel.room_id)
+             for rel in test_model.room_glazing_relations if rel.room_id in bath_list and any(
+        (facing in opposite_directions) for facing in rel.facings)]
+    if bool(edge and north) == True:
+        return [("dna40", "dna48")]
+    else:
+        return []
+
+
+def dna40_dna49(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna49"]
+    north = [(rel.room_id)
+             for rel in test_model.room_glazing_relations if rel.room_id in sto_list and any(
+        (facing in opposite_directions) for facing in rel.facings)]
+    if bool(edge and north) == True:
+        return [("dna40", "dna49")]
+    else:
+        return []
+
+
+def dna40_dna51(model: House,) -> List[Tuple[E, A]]:
+    edge = [
+        ((a, b), {})
+        for a in node_ids_2
+        if a in "dna40"
+        for b in node_ids_2 if b in "dna51"]
+    north = [(rel.room_id)
+             for rel in test_model.room_glazing_relations if rel.room_id in dress_list and any(
+        (facing in opposite_directions) for facing in rel.facings)]
+    if bool(edge and north) == True:
+        return [("dna40", "dna51")]
+    else:
+        return []
+
+
+# edge_name_2_1
+def dna42_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna42"
         for b in node_ids_2 if b in "dna48"]
-    dna42_dna49_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in sto_list
-                      ] + [(conn.a_id, conn.b_id)
-                           for conn in test_model.room_connections
-                           if conn.a_id in sto_list and conn.b_id in ent_list
-                           ]
-    dna42_dna49: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in ent_list and conn.b_id in bath_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in bath_list and conn.b_id in ent_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna42", "dna48")]
+    else:
+        return []
+
+
+def dna42_dna49(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna42"
         for b in node_ids_2 if b in "dna49"]
-    dna46_dna48_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in kit_list and conn.b_id in bath_list
-                      ] + [(conn.a_id, conn.b_id)
-                           for conn in test_model.room_connections
-                           if conn.a_id in bath_list and conn.b_id in kit_list
-                           ]
-    dna46_dna48: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in ent_list and conn.b_id in sto_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in sto_list and conn.b_id in ent_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna42", "dna49")]
+    else:
+        return []
+
+
+def dna46_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna46"
         for b in node_ids_2 if b in "dna48"]
-    dna46_dna49_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in kit_list and conn.b_id in sto_list
-                      ] + [(conn.a_id, conn.b_id)
-                           for conn in test_model.room_connections
-                           if conn.a_id in sto_list and conn.b_id in kit_list
-                           ]
-    dna46_dna49: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in kit_list and conn.b_id in bath_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in bath_list and conn.b_id in kit_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna46", "dna48")]
+    else:
+        return []
+
+
+def dna46_dna49(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna46"
         for b in node_ids_2 if b in "dna49"]
-    dna51_dna48_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in dress_list and conn.b_id in bath_list
-                      ] + [(conn.a_id, conn.b_id)
-                           for conn in test_model.room_connections
-                           if conn.a_id in bath_list and conn.b_id in dress_list
-                           ]
-    dna51_dna48: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in kit_list and conn.b_id in sto_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in sto_list and conn.b_id in kit_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna46", "dna49")]
+    else:
+        return []
+
+
+def dna51_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna51"
         for b in node_ids_2 if b in "dna48"]
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in dress_list and conn.b_id in bath_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in bath_list and conn.b_id in dress_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna51", "dna48")]
+    else:
+        return []
 
-    if bool(dna42_dna48_id and dna42_dna49_id and dna46_dna48_id and dna46_dna49_id and dna51_dna48_id) == True:
-        return dna42_dna48, dna42_dna49, dna46_dna48, dna46_dna49, dna51_dna48
 
-    return dna42_dna48, dna42_dna49, dna46_dna48, dna46_dna49, dna51_dna48
-
-
-# print(edge_name_2_1(test_model))
-
-
-# 포함 2-2: 공간의 집합(영역)인경우
-# 42, 43, 43.1, 46, 47, 48, 51→43(43.1), 46, 47, 48, 49, 50, 51
-# to공간이 하나의 공간과만 연결되어 있으며, 연결된 공간의 이름이 to공간과 같은 경우 연결
-
-def edge_name_2_2(model: House, ) -> List[Tuple[E, A]]:
-    # TODO: 43. 지루하지 않는 복도와의 연결은 두가지 조건이 있음. 이에 대한 코딩 추가
-    # TODO: 다른 유전자 엣지도 다시 확인해서 추가할 것
-    conn_types = [RevitObject.ROOM_SEPARATION_LINE,
-                  RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
-    dna41_dna43_id = [(conn.a_id, conn.type_)
-                      for conn in test_model.room_connections
-                      if conn.a_id in living_list and conn.type_ in conn_types
-                      ]+[(conn.b_id, conn.type_)
-                         for conn in test_model.room_connections
-                         if conn.b_id in living_list and conn.type_ in conn_types
-                         ]
-    dna41_dna43: List[Tuple[E, A]] = [
+# edge_name_2_2
+def dna41_dna43(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna41"
         for b in node_ids_2 if b in "dna43"]
-    dna41_dna46_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in living_list and conn.b_id in kit_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in kit_list and conn.b_id in living_list
-                         ]
-    dna41_dna46: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in living_list and conn.b_id in corr_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in corr_list and conn.b_id in pub_list and not living_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna41", "dna43")]
+    else:
+        return []
+
+
+def dna41_dna46(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna41"
         for b in node_ids_2 if b in "dna46"]
-    dna41_dna47_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in living_list and conn.b_id in dining_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in dining_list and conn.b_id in living_list
-                         ]
-    dna41_dna47: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in living_list and conn.b_id in kit_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in kit_list and conn.b_id in living_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna41", "dna46")]
+    else:
+        return []
+
+
+def dna41_dna47(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna41"
         for b in node_ids_2 if b in "dna47"]
-    dna44_dna48_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in mbr_list and conn.b_id in bath_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in mbr_list
-                         ]
-    dna44_dna48: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in living_list and conn.b_id in dining_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in dining_list and conn.b_id in living_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna41", "dna47")]
+    else:
+        return []
+
+
+def dna44_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna44"
         for b in node_ids_2 if b in "dna48"]
-    dna44_dna49_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in mbr_list and conn.b_id in sto_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in sto_list and conn.b_id in mbr_list
-                         ]
-    dna44_dna49: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in mbr_list and conn.b_id in bath_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in bath_list and conn.b_id in mbr_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna44", "dna48")]
+    else:
+        return []
+
+
+def dna44_dna49(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna44"
         for b in node_ids_2 if b in "dna49"]
-    dna44_dna51_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in mbr_list and conn.b_id in dress_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in dress_list and conn.b_id in mbr_list
-                         ]
-    dna44_dna51: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in mbr_list and conn.b_id in sto_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in sto_list and conn.b_id in mbr_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna44", "dna49")]
+    else:
+        return []
+
+
+def dna44_dna51(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna44"
         for b in node_ids_2 if b in "dna51"]
-    dna45_dna48_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in bed_list and conn.b_id in bath_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in bed_list
-                         ]
-    dna45_dna48: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in mbr_list and conn.b_id in dress_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in dress_list and conn.b_id in mbr_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna44", "dna51")]
+    else:
+        return []
+
+
+def dna45_dna48(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna45"
         for b in node_ids_2 if b in "dna48"]
-    dna45_dna49_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in bed_list and conn.b_id in sto_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in sto_list and conn.b_id in bed_list
-                         ]
-    dna45_dna49: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in bedonly_list and conn.b_id in bath_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in bath_list and conn.b_id in bedonly_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna45", "dna48")]
+    else:
+        return []
+
+
+def dna45_dna49(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna45"
         for b in node_ids_2 if b in "dna49"]
-    dna45_dna51_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in bed_list and conn.b_id in dress_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in dress_list and conn.b_id in bed_list
-                         ]
-    dna45_dna51: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in bedonly_list and conn.b_id in sto_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in sto_list and conn.b_id in bedonly_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna45", "dna49")]
+    else:
+        return []
+
+
+def dna45_dna51(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna45"
         for b in node_ids_2 if b in "dna51"]
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in bedonly_list and conn.b_id in dress_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in dress_list and conn.b_id in bedonly_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna45", "dna51")]
+    else:
+        return []
 
-    if bool(dna41_dna43_id and dna41_dna46_id and dna41_dna47_id and dna44_dna48_id and dna44_dna49_id and dna44_dna51_id and dna45_dna48_id and dna45_dna49_id and dna45_dna51_id) == True:
-        return dna41_dna43, dna41_dna46, dna41_dna47, dna44_dna48, dna44_dna49, dna44_dna51, dna45_dna48, dna45_dna49, dna45_dna51
-
-    return dna41_dna43, dna41_dna46, dna41_dna47, dna44_dna48, dna44_dna49, dna44_dna51, dna45_dna48, dna45_dna49, dna45_dna51
+# edge_name_6
 
 
-# 포함 6-1: 단일공간인경우, 포함 6-2: 공간 집합인 경우
-# 44,45,46,47 → 29
-# to공간이 하나의 공간과만 연결되어있으며, 연결된 공간의 이름이 to공간과 같은 경우 연결
-
-def edge_name_6(model: House, ) -> List[Tuple[E, A]]:
-    dna44_dna29_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in mbr_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in semi_out_list
-                         ]
-    dna44_dna29: List[Tuple[E, A]] = [
+def dna44_dna29(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna44"
         for b in node_ids_2 if b in "dna29"]
-    dna45_dna29_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in bed_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in semi_out_list
-                         ]
-    dna45_dna29: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in mbr_list and conn.b_id in semi_out_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in semi_out_list and conn.b_id in mbr_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna44", "dna29")]
+    else:
+        return []
+
+
+def dna45_dna29(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna45"
         for b in node_ids_2 if b in "dna29"]
-    dna46_dna29_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in kit_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in semi_out_list
-                         ]
-    dna46_dna29: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in bedonly_list and conn.b_id in semi_out_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in semi_out_list and conn.b_id in bedonly_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna45", "dna29")]
+    else:
+        return []
+
+
+def dna46_dna29(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna46"
         for b in node_ids_2 if b in "dna29"]
-    dna47_dna29_id = [(conn.a_id, conn.b_id)
-                      for conn in test_model.room_connections
-                      if conn.a_id in ent_list and conn.b_id in dining_list
-                      ]+[(conn.a_id, conn.b_id)
-                         for conn in test_model.room_connections
-                         if conn.a_id in bath_list and conn.b_id in semi_out_list
-                         ]
-    dna47_dna29: List[Tuple[E, A]] = [
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in kit_list and conn.b_id in semi_out_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in semi_out_list and conn.b_id in kit_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna46", "dna29")]
+    else:
+        return []
+
+
+def dna47_dna29(model: House,) -> List[Tuple[E, A]]:
+    edge = [
         ((a, b), {})
         for a in node_ids_2
         if a in "dna47"
         for b in node_ids_2 if b in "dna29"]
-    if bool(dna44_dna29_id and dna45_dna29_id and dna46_dna29_id and dna46_dna29_id) == True:
-        return dna44_dna29, dna45_dna29, dna46_dna29, dna47_dna29
+    conn_logic = [(conn.a_id, conn.b_id)
+                  for conn in test_model.room_connections
+                  if conn.a_id in dining_list and conn.b_id in semi_out_list
+                  ]+[(conn.a_id, conn.b_id)
+                     for conn in test_model.room_connections
+                     if conn.a_id in semi_out_list and conn.b_id in dining_list
+                     ]
+    if bool(edge and conn_logic) == True:
+        return [("dna47", "dna29")]
+    else:
+        return []
 
-    return dna44_dna29, dna45_dna29, dna46_dna29, dna47_dna29
+
+# print(gray_edges_list(test_model))
+# print(edge_name_1_1(test_model))
+# print(edge_name_1_2(test_model))
+# print(edge_name_6(test_model))
+
+south = [(rel.room_id) for rel in test_model.room_glazing_relations if rel.room_id in main_list and any(
+    (facing in sun_directions) for facing in rel.facings)]
+north = [(rel.room_id)
+         for rel in test_model.room_glazing_relations if rel.room_id in indoor_ancill_list and any(
+    (facing in opposite_directions) for facing in rel.facings)]
 
 
-print(edge_name_6(test_model))
+# print(south)
+# print(north)
