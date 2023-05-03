@@ -47,13 +47,13 @@ def dnas_glazing_network(
         room.element_id: analyze_sun_order(G, outmost_list, room.element_id)
         for room in model.rooms
     }
+    sunlit_order: int = 3
 
     # dna40_northface를 위한 코드
     south = [(rel.room_id) for rel in model.room_glazing_relations if rel.room_id in main_list and any(
         (facing in sun_directions) for facing in rel.facings)]
-    north = [(rel.room_id)
-             for rel in model.room_glazing_relations if rel.room_id in indoor_ancill_list and any(
-        (facing in opposite_directions) for facing in rel.facings)]
+    north = [(rel.room_id) for rel in model.room_glazing_relations if rel.room_id in indoor_ancill_list and any(
+        (facing in opposite_directions) for facing in rel.facings)] + [room for room in indoor_ancill_list if sun_dict[room] > sunlit_order]
 
     # dna39_Light_dark_contrast를 위한 코드
     conn_types_open = [RevitObject.ROOM_SEPARATION_LINE]
