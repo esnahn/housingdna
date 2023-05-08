@@ -1,6 +1,24 @@
+if __name__ == "__main__" and __package__ is None:
+    # set relative import path
+    import sys
+    import pathlib
+
+    dir_level = 2
+
+    assert dir_level >= 1
+    file_path = pathlib.PurePath(__file__)
+    sys.path.append(str(file_path.parents[dir_level]))
+
+    package_path = ""
+    for level in range(dir_level - 1, 0 - 1, -1):
+        package_path += file_path.parents[level].name
+        if level > 0:
+            package_path += "."
+    __package__ = package_path
 
 from typing import Dict, List, Mapping, Sequence, Set
 from .type import N
+
 
 import housingdna.file as hdna
 import numpy as np
@@ -13,10 +31,11 @@ from ..model import (
     RoomGlazingRelation,
     multiple_sides,
 )
-from .name import (
-    is_main,
-    is_semi_outdoor,)
-from .name import is_main, judge_by_name
+from .name import (is_main, is_semi_outdoor, is_main,
+                   judge_by_name)
+from .glazing_network import analyze_sun_order
+from collections import Counter
+import networkx as nx
 
 
 def dnas_attribute(
@@ -36,7 +55,9 @@ def dnas_attribute(
     for key, eval in [
         ("dna55", dna55_higher_main(room_heights, main_list)),
         ("dna61", dna61_windows_on_two_sides(
-            model.room_glazing_relations, semi_out_list)),
+            model)),
+        # ("dna61", dna61_windows_on_two_sides(
+        #     model.room_glazing_relations, semi_out_list)), #first code
         ("dna64", dna64_window_to_outdoor(
             model.room_glazing_relations, outmost_list)),
         ("dna68", dna68_window_interior(model.glazings, model.room_glazing_relations)),
@@ -54,6 +75,38 @@ def is_mbr(room: Room) -> bool:
     return judge_by_name(room.name, exact_list)
 
 
+def room_outmost_win_count(model: House,
+                           ) -> List[N]:
+    G: nx.DiGraph = nx.DiGraph()
+    # assuming mid-latitude northern hemisphere
+    sun_directions = [Direction.SOUTH,
+                      Direction.SOUTHEAST, Direction.SOUTHWEST, Direction.EAST, Direction.WEST]
+    opposite_directions = [d.opposite() for d in sun_directions]
+    edges = [
+        (rel.room_id, rel.glazing_id)
+        for rel in model.room_glazing_relations
+        if any((facing in sun_directions) for facing in rel.facings)
+    ] + [
+        (rel.glazing_id, rel.room_id)
+        for rel in model.room_glazing_relations
+        if any((facing in opposite_directions) for facing in rel.facings)
+    ]
+    G.add_edges_from(edges)
+
+    outmost_list = [g.element_id for g in model.glazings if g.outmost]
+    sun_dict_win = {win.element_id: analyze_sun_order(
+        G, outmost_list, win.element_id) for win in model.glazings}
+    except_open = [g.element_id for g in model.glazings if g.outmost ==
+                   True and g.type_ != RevitObject.ROOM_SEPARATION_LINE]
+    glazing_list = [g.element_id for g in model.glazings if g.type_ !=
+                    RevitObject.ROOM_SEPARATION_LINE]
+    sunlit2_list = [
+        win for win in glazing_list if sun_dict_win[win] == 2]
+    room_list_2sides = [
+        win.room_id for win in model.room_glazing_relations if win.glazing_id in except_open + sunlit2_list]
+    return Counter(room_list_2sides)
+
+
 def dna55_higher_main(
     heights: Mapping[int, float], main_list: Sequence[int]
 ) -> List[int]:
@@ -63,12 +116,22 @@ def dna55_higher_main(
     main_median: float = float(np.median(list(main_heights.values())))
     return [room for room, height in main_heights.items() if height > main_median]
 
+# dna61__windows_on_two_sides: first code @dr. ahn
+# def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation], outmost_list: List[int]) -> List[int]:
+#     room_facings: Dict[int, Set[Direction]] = dict()
+#     for rel in rels:
+#         room_facings.setdefault(rel.room_id, set()).update(rel.facings)
+#     return [room for room, facings in room_facings.items() if multiple_sides(facings) and not outmost_list]
 
-def dna61_windows_on_two_sides(rels: Sequence[RoomGlazingRelation], outmost_list: List[int]) -> List[int]:
-    room_facings: Dict[int, Set[Direction]] = dict()
-    for rel in rels:
-        room_facings.setdefault(rel.room_id, set()).update(rel.facings)
-    return [room for room, facings in room_facings.items() if multiple_sides(facings) and not outmost_list]
+
+def dna61_windows_on_two_sides(model: House,
+                               ) -> List[N]:
+    all_room_list = [
+        room.element_id for room in model.rooms]
+    win_count_dict = room_outmost_win_count(model)
+    two_sides_room_list = [
+        room for room in all_room_list if win_count_dict[room] >= 2]
+    return two_sides_room_list
 
 
 def dna64_window_to_outdoor(

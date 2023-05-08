@@ -130,4 +130,4 @@ def dna54_Independent_rooms(
 
 
 # print(dna54_Independent_rooms(test_model))
-# print(dnas_complex(test_model))
+print(dnas_complex(test_model))
