@@ -726,8 +726,8 @@ def dna47_dna29(model: House,) -> List[Tuple[E, A]]:
         return []
 
 
-print(dnas_glazing_network(test_model))
-print(gray_edges_list(test_model))
+# print(dnas_glazing_network(test_model))
+# print(gray_edges_list(test_model))
 # print(edge_name_1_1(test_model))
 # print(edge_name_1_2(test_model))
 # print(edge_name_6(test_model))

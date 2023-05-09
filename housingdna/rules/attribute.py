@@ -1,21 +1,3 @@
-if __name__ == "__main__" and __package__ is None:
-    # set relative import path
-    import sys
-    import pathlib
-
-    dir_level = 2
-
-    assert dir_level >= 1
-    file_path = pathlib.PurePath(__file__)
-    sys.path.append(str(file_path.parents[dir_level]))
-
-    package_path = ""
-    for level in range(dir_level - 1, 0 - 1, -1):
-        package_path += file_path.parents[level].name
-        if level > 0:
-            package_path += "."
-    __package__ = package_path
-
 from typing import Dict, List, Mapping, Sequence, Set
 from .type import N
 
@@ -31,7 +13,7 @@ from ..model import (
     RoomGlazingRelation,
     multiple_sides,
 )
-from .name import (is_main, is_semi_outdoor, is_main,
+from .name import (is_main, is_semi_outdoor, is_main, is_bedroom,
                    judge_by_name)
 from .glazing_network import analyze_sun_order
 from collections import Counter
@@ -63,6 +45,7 @@ def dnas_attribute(
         ("dna68", dna68_window_interior(model.glazings, model.room_glazing_relations)),
         ("dna67", dna67_Windows_overlooking_Life(
             model.glazings, model.room_glazing_relations)),
+        ("dna54", dna54_Independent_rooms(model)),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -185,3 +168,19 @@ def dna67_Windows_overlooking_Life(model: House,
         window for window, facings in window_facings.items() if multiple_sides(facings) and semi_out_list
     ]
     return [rel.room_id for rel in rels if rel.glazing_id in real_inner_window_list]
+
+
+# 54_독립된 방
+def dna54_Independent_rooms(
+    model: House,
+) -> List[N]:
+    conn_types_door = [RevitObject.DOOR]
+    bed_list = [
+        room.element_id for room in model.rooms if is_bedroom(room)]
+
+    independent_rooms1 = [(conn.a_id, conn.type_)
+                          for conn in model.room_connections if conn.a_id in bed_list and conn.type_ in conn_types_door]
+    independent_rooms2 = [(conn.b_id, conn.type_)
+                          for conn in model.room_connections if conn.b_id in bed_list and conn.type_ in conn_types_door]
+
+    return set(independent_rooms1) - set(independent_rooms2)

@@ -8,7 +8,7 @@ from .name import (
     is_ancillary,
     is_bedroom,
     is_main,
-    is_semi_outdoor,
+    is_semi_outdoor, is_corridor
 )
 import networkx as nx
 
@@ -80,6 +80,7 @@ def dnas_glazing_network(
             "dna39",
             dna39_Light_dark_contrast(list_conn_values1, list_conn_values2),
         ),
+        ("dna43", dna43_fun_corr(model)),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -167,3 +168,36 @@ def dna39_Light_dark_contrast(list_conn_values1: List[int],
     if list_conn_values1 != list_conn_values2:  # 오픈으로 연결된 방들의 채광정도의 차이가 있는 경우, True
         return True
     return False
+
+
+def dna43_fun_corr(
+    model: House,
+) -> List[N]:
+    # room-glazing network
+    conn_types_open = [RevitObject.ROOM_SEPARATION_LINE]
+    conn_types_win = [RevitObject.WINDOW, RevitObject.CURTAIN_WALL]
+    glazing_types = [(gla.element_id)
+                     for gla in model.glazings if gla.type_ in conn_types_win]
+    # 외기에 면한 창 리스트
+    outmost_list = [g.element_id for g in model.glazings if g.outmost]
+    # 외기에 면한 방 리스트
+    outmost_room = [(out.room_id)
+                    for out in model.room_glazing_relations if out.room_id in model.rooms and out.glazing_id in outmost_list]
+
+    corr_list = [
+        room.element_id for room in model.rooms if is_corridor(room)]
+    ancill_list = [
+        room.element_id for room in model.rooms if is_ancillary(room)]
+    # 1. 복도가 없을 때
+    fun_corr1 = [room for room in corr_list]
+    # 2. 복도가 있을 때, 복도와 연결된 다른 공간이 오픈되어 있는 경우. but 현관과 복도 오픈 연결은 제외
+    fun_corr2 = [
+        (conn.a_id, conn.type_) for conn in model.room_connections if conn.a_id in corr_list and conn.type_ in conn_types_open and not ancill_list] + [
+        (conn.b_id, conn.type_) for conn in model.room_connections if conn.b_id in corr_list and conn.type_ in conn_types_open and not ancill_list]
+    # 3. 복도가 있을 때, 복도에 외기로의 창이 있는 경우. 외기에 면한 창만을 어떻게 설정????
+    fun_corr3 = [rel for rel in outmost_room if rel in corr_list]
+
+    # return fun_corr1, fun_corr2, fun_corr3, outmost_room
+
+    if bool(fun_corr1) == False or bool(fun_corr2 or fun_corr3) == True:
+        return True
