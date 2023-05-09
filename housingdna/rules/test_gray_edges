@@ -25,7 +25,7 @@ from .type import N, E, A
 from .nodes import node_names
 from .edges import white_edges, gray_edges
 from .name import dna34_ent_transition, dna33_main_entrance, is_main, dnas_room_name, is_bedroom, is_kitchen, is_semi_outdoor, is_entrance, is_dining, is_bathroom, is_storage, is_dressroom, is_corridor, is_public, is_ancillary, is_living, is_semi_outdoor
-from .test_attribute import is_mbr, dnas_attribute
+from .attribute import is_mbr, dnas_attribute
 from .room_network import dnas_room_network, dna36_pub_priv_gradient, dna38_direct_connection, dna41_central_public, dna44_couples_realm, dna45_childrens_realm
 from .glazing_network import dnas_glazing_network, dna37_indoor_for_sunlight, dna52_bedroom_for_sunlight
 from .test_complex import dnas_complex
