@@ -42,8 +42,6 @@ def analyze_housing_dna(
             dnas_attribute(model),
             dnas_room_network(model),
             dnas_glazing_network(model),
-            dnas_complex(model)
-
         )
     )
 

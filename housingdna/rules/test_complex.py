@@ -34,7 +34,7 @@ from housingdna.rules import edges
 # 분석 대상 불러오기: revit file 명 ""에 추가할 것
 test_model = hdna.get_model(
     "housingdna/models/Japan_01_Sato Kogyo Co._81.58(test).json")
-# print(test_model)
+
 
 # 네트워크 만들기
 G = nx.Graph()

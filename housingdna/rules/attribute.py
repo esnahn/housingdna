@@ -30,9 +30,6 @@ def dnas_attribute(
 
     outmost_list = [g.element_id for g in model.glazings if g.outmost]
 
-    semi_out_list = [
-        room.element_id for room in model.rooms if is_semi_outdoor(room)]
-
     dna: List[N] = []
     for key, eval in [
         ("dna55", dna55_higher_main(room_heights, main_list)),

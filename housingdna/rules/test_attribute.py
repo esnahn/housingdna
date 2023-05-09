@@ -35,14 +35,18 @@ from ..model import (
     multiple_sides,
 )
 from .name import (
-    is_ancillary, is_main, is_semi_outdoor, judge_by_name,
+    is_ancillary, is_main, is_semi_outdoor, judge_by_name, is_entrance, is_living
 )
 
 from .glazing_network import analyze_sun_order
 
 # # 분석 대상 불러오기: revit file 명 ""에 추가할 것
+# test_model = hdna.get_model(
+#     "housingdna/models/Japan_01_Sato Kogyo Co._81.58(수정).json")
+
 test_model = hdna.get_model(
-    "housingdna/models/Japan_01_Sato Kogyo Co._81.58(수정).json")
+    "housingdna/models/Korea_01_위례자연앤셑트럴자이_98.79(완성).json"
+)
 
 
 def dnas_attribute(
@@ -68,6 +72,8 @@ def dnas_attribute(
         ("dna55", dna55_higher_main(room_heights, main_list)),
         ("dna61", dna61_windows_on_two_sides(
             test_model.room_glazing_relations, outmost_list)),
+        ("dna61-2", dna61_windows_on_two_sides_v2(
+            test_model)),
         ("dna64", dna64_window_to_outdoor(
             test_model.room_glazing_relations, outmost_list)),
         ("dna68", dna68_window_interior(
@@ -142,7 +148,9 @@ def dna68_window_interior(
     real_inner_window_list = [
         window for window, facings in window_facings.items() if multiple_sides(facings)
     ]
-    return [rel.room_id for rel in rels if rel.glazing_id in real_inner_window_list]
+    # real_inner_room = [
+    #     room.room_id for room in test_model.room_glazing_relations if not is_semi_outdoor(room)]
+    return [rel.room_id for rel in rels if not rel.glazing_id in real_inner_window_list]
 
 
 def dna67_Windows_overlooking_Life(
@@ -170,10 +178,27 @@ def dna67_Windows_overlooking_Life(
     return [rel.room_id for rel in rels if rel.glazing_id in real_inner_window_list]
 
 
-except_open = [g.element_id for g in test_model.glazings if g.type_ !=
+G: nx.DiGraph = nx.DiGraph()
+sun_directions = [Direction.SOUTH, Direction.EAST,
+                  Direction.SOUTHEAST, Direction.SOUTHWEST]
+opposite_directions = [d.opposite() for d in sun_directions]
+edges = [
+    (rel.room_id, rel.glazing_id)
+    for rel in test_model.room_glazing_relations
+    if any((facing in sun_directions) for facing in rel.facings)
+] + [
+    (rel.glazing_id, rel.room_id)
+    for rel in test_model.room_glazing_relations
+    if any((facing in opposite_directions) for facing in rel.facings)
+]
+
+
+G.add_edges_from(edges)
+ent_list = [room.element_id for room in test_model.rooms if is_entrance(room)]
+living_list = [room.element_id for room in test_model.rooms if is_living(room)]
+
+except_open = [g.element_id for g in test_model.glazings if g.outmost == True and g.type_ !=
                RevitObject.ROOM_SEPARATION_LINE]
-
-
 main_list = [
     room.element_id for room in test_model.rooms if is_main(room)]
 
@@ -181,6 +206,9 @@ room_heights = {
     room.element_id: room.height.mm for room in test_model.rooms}
 
 outmost_list = [g.element_id for g in test_model.glazings if g.outmost]
+
+glazing_list = [g.element_id for g in test_model.glazings if g.type_ !=
+                RevitObject.ROOM_SEPARATION_LINE]
 
 semi_out_list = [
     room.element_id for room in test_model.rooms if is_semi_outdoor(room)]
@@ -193,40 +221,69 @@ room_list = [
 win_list = [
     win.glazing_id for win in test_model.room_glazing_relations if outmost_list]
 
-(Counter(room_list))
 
+sun_dict = {win.element_id: analyze_sun_order(
+    G, outmost_list, win.element_id) for win in test_model.rooms}
+sunlit_order: int = 2
 
 room_win_count2 = {win.room_id: win.glazing_id
                    for win in test_model.room_glazing_relations}
+sun_dict_win = {win.element_id: analyze_sun_order(
+    G, outmost_list, win.element_id) for win in test_model.glazings}
 
-# print(outmost_room)
+sunlit2_list = [
+    win for win in glazing_list if sun_dict_win[win] == sunlit_order]
 
-# print(room_list)
-# print(room_list2)
+room_list22 = [
+    win.room_id for win in test_model.room_glazing_relations if win.glazing_id in except_open + sunlit2_list]
+all_room_list = [
+    room.element_id for room in test_model.rooms]
+all = [rel for rel in outmost_room if rel in living_list]
 
-# print(room_win)
+
+# TODO: 추후 gethub에 추가할 것
 
 
-def room_win_count(test_model: House,
-                   ) -> List[N]:
-
-    except_open = [g.element_id for g in test_model.glazings if g.type_ !=
+def room_outmost_win_count(model: House,
+                           ) -> List[N]:
+    except_open = [g.element_id for g in test_model.glazings if g.outmost == True and g.type_ !=
                    RevitObject.ROOM_SEPARATION_LINE]
-    room_list = [
-        win.room_id for win in test_model.room_glazing_relations if win.glazing_id in except_open]
-    return Counter(room_list)
+    glazing_list = [g.element_id for g in test_model.glazings if g.type_ !=
+                    RevitObject.ROOM_SEPARATION_LINE]
+    sunlit2_list = [
+        win for win in glazing_list if sun_dict_win[win] == 2]
+    room_list_2sides = [
+        win.room_id for win in test_model.room_glazing_relations if win.glazing_id in except_open + sunlit2_list]
+    return Counter(room_list_2sides)
 
 
-# print(room_win_count(test_model))
+# TODO: 추후 gethub에 추가할 것
 
+
+def dna61_windows_on_two_sides_v2(model: House,
+                                  ) -> List[N]:
+    all_room_list = [
+        room.element_id for room in test_model.rooms]
+    win_count_dict = room_outmost_win_count(test_model)
+    two_sides_room_list = [
+        room for room in all_room_list if win_count_dict[room] >= 2]
+    return two_sides_room_list
+
+
+# win_count: int = 2
+# win_count_dict = room_outmost_win_count(test_model)
+# two_sides_room_list = [
+#     room for room in all_room_list if win_count_dict[room] >= 2]
+
+# print(win_count_dict)
+# print(two_sides_room_list)
 
 # print(dnas_attribute(test_model))
-# # print(dna55_higher_main(room_heights, main_list))
+# print(dna55_higher_main(room_heights, main_list))
 # print(dna61_windows_on_two_sides(test_model.room_glazing_relations, semi_out_list))
-# # print(dna64_window_to_outdoor(test_model.room_glazing_relations, outmost_list))
+# print(dna64_window_to_outdoor(test_model.room_glazing_relations, outmost_list))
 # print(dna68_window_interior(test_model.glazings, test_model.room_glazing_relations))
 # print(dna67_Windows_overlooking_Life(
 #     test_model.glazings, test_model.room_glazing_relations))
 
-# print(room_win)
 # print(room_win_count)
