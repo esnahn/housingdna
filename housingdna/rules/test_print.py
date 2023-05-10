@@ -27,7 +27,7 @@ from .name import dnas_room_name
 from .attribute import dnas_attribute
 from .room_network import dnas_room_network
 from .glazing_network import dnas_glazing_network, analyze_sun_order
-
+from .test_gray_edges 
 
 from test_model import sample_model
 
