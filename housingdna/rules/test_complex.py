@@ -32,8 +32,11 @@ from housingdna.rules import edges
 
 
 # 분석 대상 불러오기: revit file 명 ""에 추가할 것
+# test_model = hdna.get_model(
+#     "housingdna/models/Japan_01_Sato Kogyo Co._81.58(test).json")
 test_model = hdna.get_model(
-    "housingdna/models/Japan_01_Sato Kogyo Co._81.58(test).json")
+    "housingdna/models/Korea_01_위례자연앤셑트럴자이_98.79(완성).json"
+)
 
 
 # 네트워크 만들기
@@ -43,7 +46,6 @@ G.add_edges_from((conn.a_id, conn.b_id)
 list(G.edges)
 
 list_edges = [G.edges]
-# print(list_edges)
 
 # 공간 분류 리스트 정리
 rooms = [room.element_id for room in test_model.rooms]
@@ -127,6 +129,3 @@ def dna54_Independent_rooms(
                           for conn in test_model.room_connections if conn.b_id in bed_list and conn.type_ in conn_types_door]
 
     return set(independent_rooms1) - set(independent_rooms2)
-
-
-# print(dna54_Independent_rooms(test_model))

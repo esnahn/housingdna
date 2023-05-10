@@ -27,14 +27,12 @@ from .name import dnas_room_name
 from .attribute import dnas_attribute
 from .room_network import dnas_room_network
 from .glazing_network import dnas_glazing_network, analyze_sun_order
-from .test_complex import dnas_complex
 
 
 from test_model import sample_model
 
 
-# print(dnas_attribute(sample_model))
+print(dnas_attribute(sample_model))
 print(dnas_room_name(sample_model))
 print(dnas_room_network(sample_model))
-# print(dnas_glazing_network(sample_model))
-print(dnas_complex(sample_model))
+print(dnas_glazing_network(sample_model))
