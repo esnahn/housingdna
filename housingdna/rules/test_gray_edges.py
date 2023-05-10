@@ -1026,8 +1026,6 @@ def edge_name_4_1(
 
 
 # TODO: edge_name_4_1
-
-
 def dna42_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
@@ -1036,17 +1034,18 @@ def dna42_dna61(
         for a in node_ids_2
         if a in "dna42"
         for b in node_ids_2
-        if b in "dna61-1"
+        if b in "dna61"
     ]
-    all_room_list = [room.element_id for room in test_model.rooms]
-    win_count_dict = room_outmost_win_count(test_model)
+
+    all_room_list = [room.element_id for room in model.rooms]
+    win_count_dict = room_outmost_win_count(model)
     two_sides_room_list = [room for room in all_room_list if win_count_dict[room] >= 2]
-    conn_logic = [rel for rel in two_sides_room_list if ent_list]
+    conn_logic = bool(ent_list for ent_list in two_sides_room_list)
 
     if bool(edge and conn_logic) == True:
         return [("dna42", "dna61")]
     else:
-        return []
+        []
 
 
 def dna42_dna64(
@@ -1059,14 +1058,13 @@ def dna42_dna64(
         for b in node_ids_2
         if b in "dna64"
     ]
-    outmost_list = [g.element_id for g in test_model.glazings if g.outmost]
+    outmost_list = [g.element_id for g in model.glazings if g.outmost]
     outmost_room = [
         room.room_id
-        for room in test_model.room_glazing_relations
+        for room in model.room_glazing_relations
         if room.glazing_id in outmost_list
     ]
-    conn_logic = [rel for rel in outmost_room if rel in ent_list]
-
+    conn_logic = bool(ent_list for ent_list in outmost_room)
     if bool(edge and conn_logic) == True:
         return [("dna42", "dna64")]
     else:
