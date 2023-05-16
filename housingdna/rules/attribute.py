@@ -174,7 +174,7 @@ def dna67_Windows_overlooking_Life(model: House) -> List[int]:
     ]
     return room_with_window_overlooking_life_list
 
-
+# TODO: 실내공간만 해당.. 즉 반외부공간으로 연결된 창은 제외되어야 함....!!!
 def dna68_window_interior(
     glazings: Sequence[Glazing], rels: Sequence[RoomGlazingRelation]
 ) -> List[int]:

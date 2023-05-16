@@ -52,12 +52,12 @@ from .name import (
     is_living,
     is_semi_outdoor,
 )
-from .test_attribute import (
+from .attribute import (
     is_mbr,
     dnas_attribute,
     room_outmost_win_count,
     dna68_window_interior,
-    dna67_Windows_overlooking_Life,
+    dna67_Windows_overlooking_Life, analyze_sun_order
 )
 from .room_network import (
     dnas_room_network,
@@ -112,6 +112,13 @@ outmost_room = [
     for room in model.room_glazing_relations
     if room.glazing_id in outmost_list
 ]
+
+G: nx.DiGraph = nx.DiGraph()
+sun_dict = {
+    room.element_id: analyze_sun_order(G, outmost_list, room.element_id)
+    for room in model.rooms
+}
+sunlit_order: int = 3
 
 
 # print(outmost_room)
