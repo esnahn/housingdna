@@ -829,6 +829,61 @@ def dna48_dna67(
     else:
         return []
 
+
+def dna49_dna64(
+    model: House,
+) -> List[Tuple[E, A]]:
+    outmost_rooms = set(
+        (
+            [room for room in rooms if sun_dict[room] <= sunlit_order]
+            + [room for room in outmost_room]
+        )
+    )
+
+    real_outmost_room = [
+        room for room in outmost_rooms if not room in semi_out_list]
+
+    conn_logic = any(room for room in real_outmost_room if room in sto_list)
+
+    if dna_edge_by_name(("dna49", "dna64"), dnas) and conn_logic:
+        return [("dna49", "dna64")]
+    else:
+        return []
+    
+
+def dna51_dna61(
+    model: House,
+) -> List[Tuple[E, A]]:
+    win_count_dict = room_outmost_win_count(model)
+    two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
+    conn_logic = any(room for room in two_sides_room_list if room in dress_list)
+
+    if dna_edge_by_name(("dna51", "dna61"), dnas) and conn_logic:
+        return [("dna51", "dna61")]
+    else:
+        return []
+
+
+def dna51_dna64(
+    model: House,
+) -> List[Tuple[E, A]]:
+    outmost_rooms = set(
+        (
+            [room for room in rooms if sun_dict[room] <= sunlit_order]
+            + [room for room in outmost_room]
+        )
+    )
+
+    real_outmost_room = [
+        room for room in outmost_rooms if not room in semi_out_list]
+
+    conn_logic = any(room for room in real_outmost_room if room in dress_list)
+
+    if dna_edge_by_name(("dna51", "dna64"), dnas) and conn_logic:
+        return [("dna51", "dna64")]
+    else:
+        return []
+
 # edge_name_4_2 
 def dna41_dna61(
     model: House,
