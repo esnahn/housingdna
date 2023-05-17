@@ -64,7 +64,7 @@ def is_mbr(room: Room) -> bool:
 
 
 def room_outmost_win_count(
-    model: House,
+    model: House, rels: Sequence[RoomGlazingRelation]
 ) -> List[N]:
     G: nx.DiGraph = nx.DiGraph()
     # assuming mid-latitude northern hemisphere
@@ -87,6 +87,19 @@ def room_outmost_win_count(
     ]
     G.add_edges_from(edges)
 
+    inner_window_list = [
+        g.element_id
+        for g in model.glazings
+        if (not g.outmost) and g.type_ != RevitObject.ROOM_SEPARATION_LINE
+    ]
+    window_facings: Dict[int, Set[Direction]] = dict()
+    for rel in rels:
+        if rel.glazing_id in inner_window_list:
+            window_facings.setdefault(rel.glazing_id, set()).update(rel.facings)
+    real_inner_window_list = [
+        window for window, facings in window_facings.items() if multiple_sides(facings)
+    ]
+
     outmost_list = [g.element_id for g in model.glazings if g.outmost]
     sun_dict_win = {
         win.element_id: analyze_sun_order(G, outmost_list, win.element_id)
@@ -103,10 +116,14 @@ def room_outmost_win_count(
         if g.type_ != RevitObject.ROOM_SEPARATION_LINE
     ]
     sunlit2_list = [win for win in glazing_list if sun_dict_win[win] == 2]
+
+    sunlit2_list_no_indoor = [
+        rel for rel in sunlit2_list if rel not in real_inner_window_list
+    ]
     room_list_2sides = [
         win.room_id
         for win in model.room_glazing_relations
-        if win.glazing_id in except_open + sunlit2_list
+        if win.glazing_id in except_open + sunlit2_list_no_indoor
     ]
     return Counter(room_list_2sides)
 
@@ -133,7 +150,7 @@ def dna61_windows_on_two_sides(
     model: House,
 ) -> List[N]:
     all_room_list = [room.element_id for room in model.rooms]
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in all_room_list if win_count_dict[room] >= 2]
     return two_sides_room_list
 
