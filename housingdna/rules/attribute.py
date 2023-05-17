@@ -49,7 +49,7 @@ def dnas_attribute(
         ),
         (
             "dna68",
-            dna68_window_interior(model, model.glazings, model.room_glazing_relations),
+            dna68_window_interior(model.glazings, model.room_glazing_relations),
         ),
     ]:
         if bool(eval) == True:
