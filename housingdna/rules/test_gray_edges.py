@@ -225,30 +225,30 @@ def edge_name_4_1(
             dna42_dna61(model),
             dna42_dna64(model),
             dna42_dna67(model),
-            # dna42_dna68(model),
+            dna42_dna68(model),
             dna43_dna61(model),
             dna43_dna64(model),
             dna43_dna67(model),
-            # dna43_dna68(model),
+            dna43_dna68(model),
             dna46_dna61(model),
             dna46_dna64(model),
             dna46_dna67(model),
-            # dna46_dna68(model),
+            dna46_dna68(model),
             # dna46_dna69(model),
             dna47_dna61(model),
             dna47_dna64(model),
             dna47_dna67(model),
-            # dna47_dna68(model),
+            dna47_dna68(model),
             # dna47_dna69(model),
             dna48_dna61(model),
             dna48_dna64(model),
             dna48_dna67(model),
-            # dna48_dna68(model),
+            dna48_dna68(model),
             # dna48_dna69(model),
-            # dna49_dna64(model),
+            dna49_dna64(model),
             # dna49_dna69(model),
-            # dna51_dna61(model),
-            # dna51_dna64(model),
+            dna51_dna61(model),
+            dna51_dna64(model),
             # dna51_dna69(model),
         )
     )
@@ -635,7 +635,18 @@ def dna42_dna67(
         return []
 
 
-# dna42_dna68: dna68해결되면 다시 해볼 것
+def dna42_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in ent_list)
+
+    if dna_edge_by_name(("dna42", "dna68"), dnas) and conn_logic:
+        return [("dna42", "dna68")]
+    else:
+        return []
+
 
 # edge_name_4_1  part2
 
@@ -686,6 +697,19 @@ def dna43_dna67(
         return []
 
 
+def dna43_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in corr_list)
+
+    if dna_edge_by_name(("dna43", "dna68"), dnas) and conn_logic:
+        return [("dna43", "dna68")]
+    else:
+        return []
+
+
 def dna46_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
@@ -728,6 +752,19 @@ def dna46_dna67(
 
     if dna_edge_by_name(("dna46", "dna67"), dnas) and conn_logic:
         return [("dna46", "dna67")]
+    else:
+        return []
+
+
+def dna46_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in kit_list)
+
+    if dna_edge_by_name(("dna46", "dna68"), dnas) and conn_logic:
+        return [("dna46", "dna68")]
     else:
         return []
 
@@ -778,6 +815,19 @@ def dna47_dna67(
         return []
 
 
+def dna47_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in dining_list)
+
+    if dna_edge_by_name(("dna47", "dna68"), dnas) and conn_logic:
+        return [("dna47", "dna68")]
+    else:
+        return []
+
+
 def dna48_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
@@ -820,6 +870,19 @@ def dna48_dna67(
 
     if dna_edge_by_name(("dna48", "dna67"), dnas) and conn_logic:
         return [("dna48", "dna67")]
+    else:
+        return []
+
+
+def dna48_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in bath_list)
+
+    if dna_edge_by_name(("dna48", "dna68"), dnas) and conn_logic:
+        return [("dna48", "dna68")]
     else:
         return []
 
