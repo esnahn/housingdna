@@ -987,48 +987,15 @@ def dna41_dna67(
         return []
 
 
-def dna41_dna61(
+def dna41_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
-    two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
-    conn_logic = any(room for room in two_sides_room_list if room in living_list)
-
-    if dna_edge_by_name(("dna41", "dna61"), dnas) and conn_logic:
-        return [("dna41", "dna61")]
-    else:
-        return []
-
-
-def dna41_dna64(
-    model: House,
-) -> List[Tuple[E, A]]:
-    outmost_rooms = set(
-        (
-            [room for room in rooms if sun_dict[room] <= sunlit_order]
-            + [room for room in outmost_room]
-        )
-    )
-
-    real_outmost_room = [room for room in outmost_rooms if not room in semi_out_list]
-
-    conn_logic = any(room for room in real_outmost_room if room in living_list)
-
-    if dna_edge_by_name(("dna41", "dna64"), dnas) and conn_logic:
-        return [("dna41", "dna64")]
-    else:
-        return []
-
-
-def dna41_dna67(
-    model: House,
-) -> List[Tuple[E, A]]:
-    room_logic = dna67_Windows_overlooking_Life(model)
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
 
     conn_logic = any(a for a in room_logic if a in living_list)
 
-    if dna_edge_by_name(("dna41", "dna67"), dnas) and conn_logic:
-        return [("dna41", "dna67")]
+    if dna_edge_by_name(("dna41", "dna68"), dnas) and conn_logic:
+        return [("dna41", "dna68")]
     else:
         return []
 
@@ -1079,6 +1046,19 @@ def dna44_dna67(
         return []
 
 
+def dna44_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in mbr_list)
+
+    if dna_edge_by_name(("dna44", "dna68"), dnas) and conn_logic:
+        return [("dna44", "dna68")]
+    else:
+        return []
+
+
 def dna45_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
@@ -1121,6 +1101,19 @@ def dna45_dna67(
 
     if dna_edge_by_name(("dna45", "dna67"), dnas) and conn_logic:
         return [("dna45", "dna67")]
+    else:
+        return []
+
+
+def dna45_dna68(
+    model: House,
+) -> List[Tuple[E, A]]:
+    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+
+    conn_logic = any(a for a in room_logic if a in bedonly_list)
+
+    if dna_edge_by_name(("dna45", "dna68"), dnas) and conn_logic:
+        return [("dna45", "dna68")]
     else:
         return []
 
