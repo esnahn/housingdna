@@ -47,7 +47,10 @@ def dnas_attribute(
             "dna67",
             dna67_Windows_overlooking_Life(model),
         ),
-        ("dna68", dna68_window_interior(model.glazings, model.room_glazing_relations)),
+        (
+            "dna68",
+            dna68_window_interior(model, model.glazings, model.room_glazing_relations),
+        ),
     ]:
         if bool(eval) == True:
             dna.append(key)
@@ -174,13 +177,17 @@ def dna67_Windows_overlooking_Life(model: House) -> List[int]:
     ]
     return room_with_window_overlooking_life_list
 
-# TODO: 실내공간만 해당.. 즉 반외부공간으로 연결된 창은 제외되어야 함....!!!
+
+# [완료] 실내공간만 해당.. 즉 반외부공간으로 연결된 창은 제외되어야 함....!!!
 def dna68_window_interior(
-    glazings: Sequence[Glazing], rels: Sequence[RoomGlazingRelation]
+    model: House,
+    glazings: Sequence[Glazing],
+    rels: Sequence[RoomGlazingRelation],
 ) -> List[int]:
     # windows, curtain walls, and glass doors
     # between rooms (not at the outmost boundary of the house)
     # excluding imaginary separation lines
+    semi_out_list = [room.element_id for room in model.rooms if is_semi_outdoor(room)]
     inner_window_list = [
         g.element_id
         for g in glazings
@@ -193,7 +200,18 @@ def dna68_window_interior(
     real_inner_window_list = [
         window for window, facings in window_facings.items() if multiple_sides(facings)
     ]
-    return [rel.room_id for rel in rels if rel.glazing_id in real_inner_window_list]
+    semi_outdoor_glazing = [
+        rel.glazing_id for rel in rels if rel.room_id in semi_out_list
+    ]
+    inner_window_without_semi_outdoor = [
+        rel for rel in real_inner_window_list if rel not in semi_outdoor_glazing
+    ]
+
+    return [
+        rel.room_id
+        for rel in rels
+        if rel.glazing_id in inner_window_without_semi_outdoor
+    ]
 
 
 # 54_독립된 방
