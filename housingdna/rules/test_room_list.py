@@ -57,7 +57,8 @@ from .attribute import (
     dnas_attribute,
     room_outmost_win_count,
     dna68_window_interior,
-    dna67_Windows_overlooking_Life, analyze_sun_order
+    dna67_Windows_overlooking_Life,
+    analyze_sun_order,
 )
 from .room_network import (
     dnas_room_network,
@@ -102,7 +103,7 @@ indoor_ancill_list = [
     if is_ancillary(room) and not is_semi_outdoor(room)
 ]
 bedonly_list = list(set(bed_list) - set(mbr_list))
-win_count_dict = room_outmost_win_count(model)
+win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
 two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
 
 
@@ -122,4 +123,4 @@ sunlit_order: int = 3
 
 
 # print(outmost_room)
-print(two_sides_room_list)
+# print(two_sides_room_list)

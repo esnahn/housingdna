@@ -52,7 +52,7 @@ from .name import (
     is_living,
     is_semi_outdoor,
 )
-from .test_attribute import (
+from .attribute import (
     is_mbr,
     dnas_attribute,
     room_outmost_win_count,
@@ -264,17 +264,17 @@ def edge_name_4_2(
             dna41_dna64(model),
             dna41_dna67(model),
             dna41_dna68(model),
-            dna41_dna69(model),
+            # dna41_dna69(model),
             dna44_dna61(model),
             dna44_dna64(model),
             dna44_dna67(model),
             dna44_dna68(model),
-            dna44_dna69(model),
+            # dna44_dna69(model),
             dna45_dna61(model),
             dna45_dna64(model),
             dna45_dna67(model),
             dna45_dna68(model),
-            dna45_dna69(model),
+            # dna45_dna69(model),
         )
     )
     return node_ids
@@ -594,7 +594,7 @@ def dna40_dna51(dnas: Sequence[N], model: House):
 def dna42_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in ent_list)
 
@@ -638,7 +638,9 @@ def dna42_dna67(
 def dna42_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in ent_list)
 
@@ -654,7 +656,7 @@ def dna42_dna68(
 def dna43_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in corr_list)
 
@@ -700,7 +702,9 @@ def dna43_dna67(
 def dna43_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in corr_list)
 
@@ -713,7 +717,7 @@ def dna43_dna68(
 def dna46_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in kit_list)
 
@@ -759,7 +763,9 @@ def dna46_dna67(
 def dna46_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in kit_list)
 
@@ -772,7 +778,7 @@ def dna46_dna68(
 def dna47_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in dining_list)
 
@@ -818,7 +824,9 @@ def dna47_dna67(
 def dna47_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in dining_list)
 
@@ -831,7 +839,7 @@ def dna47_dna68(
 def dna48_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in bath_list)
 
@@ -877,7 +885,9 @@ def dna48_dna67(
 def dna48_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in bath_list)
 
@@ -910,7 +920,7 @@ def dna49_dna64(
 def dna51_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in dress_list)
 
@@ -944,7 +954,7 @@ def dna51_dna64(
 def dna41_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in living_list)
 
@@ -990,7 +1000,9 @@ def dna41_dna67(
 def dna41_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in living_list)
 
@@ -1003,7 +1015,7 @@ def dna41_dna68(
 def dna44_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in mbr_list)
 
@@ -1049,7 +1061,9 @@ def dna44_dna67(
 def dna44_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in mbr_list)
 
@@ -1062,7 +1076,7 @@ def dna44_dna68(
 def dna45_dna61(
     model: House,
 ) -> List[Tuple[E, A]]:
-    win_count_dict = room_outmost_win_count(model)
+    win_count_dict = room_outmost_win_count(model, model.room_glazing_relations)
     two_sides_room_list = [room for room in rooms if win_count_dict[room] >= 2]
     conn_logic = any(room for room in two_sides_room_list if room in bedonly_list)
 
@@ -1108,7 +1122,9 @@ def dna45_dna67(
 def dna45_dna68(
     model: House,
 ) -> List[Tuple[E, A]]:
-    room_logic = dna68_window_interior(model.glazings, model.room_glazing_relations)
+    room_logic = dna68_window_interior(
+        model, model.glazings, model.room_glazing_relations
+    )
 
     conn_logic = any(a for a in room_logic if a in bedonly_list)
 
